@@ -6,7 +6,7 @@
 
 - **בעלות ולוגו:** אפליקציה של ענת (לוגו A&I, `<ai-menu>`). הוכרע בלי שאלה כי זה כלי מחקר ולא שירות עירוני. אם זה של העירייה: `brand="ashdod"` ב-`src/components/TopBar.tsx`.
 - **אפיון המקור:** "אפיון מחקרי לאפליקציית קוד העיר" (קובץ שענת העלתה, 05.11.2026). סעיפים 4, 8, 9 ו-11.2 ממומשים כאן.
-- **כתובות:** GitHub https://github.com/Anat1969/HistoArc-GH · Vercel ראו `aoa_apps`.
+- **כתובות:** GitHub https://github.com/Anat1969/HistoArc-GH · Vercel https://histoarc-gh.vercel.app
 
 ## תעודת DNA
 - **מטאפורה:** לוח הפרלל של דוראן: כל הערים באותו קנה מידה, על שולחן שרטוט.
