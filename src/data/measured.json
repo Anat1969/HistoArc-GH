@@ -1,42 +1,142 @@
 {
   "19": {
     "name": "Eixample, Barcelona",
-    "error": "Graph must be unprojected to add edge bearings."
+    "state_year": 2026,
+    "O": 0.771,
+    "E": 0.565,
+    "I": 3.266,
+    "G": 42.8,
+    "wall": 0.37,
+    "roads": 527,
+    "buildings": 560,
+    "method": "boeing_phi+spacematrix",
+    "source": "Overture Maps (OpenStreetMap-derived, ODbL)",
+    "confidence": 0.6
   },
   "18": {
     "name": "Paris",
-    "error": "Graph must be unprojected to add edge bearings."
+    "state_year": 2026,
+    "O": 0.241,
+    "E": 0.434,
+    "I": 2.028,
+    "G": 38.4,
+    "wall": 0.51,
+    "roads": 641,
+    "buildings": 639,
+    "method": "boeing_phi+spacematrix",
+    "source": "Overture Maps (OpenStreetMap-derived, ODbL)",
+    "confidence": 0.6
   },
   "8": {
     "name": "Fès el-Bali",
-    "error": "'overpass-api.de' responded: 502 Bad Gateway # 502 Gateway Timeout\n\nThis Overpass API server is currently at capacity. All query workers are busy\nand the request queue is full.\n\n## What to do\n\nRetry your request using exponential backoff: wait a short interval, then retry.\nIf the request fails again, double the wait time and retry again.\n\n## For heavy or automated use\n\nThis public endpoint is intended for browser-based and human-operated tools.\nFor automated or high-volume use, run a local Overpass API instance:\n\nhttps://github.com/b1tw153/Overpass-API/blob/main/README.md\n"
+    "state_year": 2026,
+    "O": 0.062,
+    "E": 0.261,
+    "I": 0.521,
+    "G": 61.2,
+    "wall": 0.57,
+    "roads": 357,
+    "buildings": 1400,
+    "method": "boeing_phi+spacematrix",
+    "source": "Overture Maps (OpenStreetMap-derived, ODbL)",
+    "confidence": 0.6
   },
   "22": {
     "name": "Tel Aviv",
-    "error": "Graph must be unprojected to add edge bearings."
+    "state_year": 2026,
+    "O": 0.226,
+    "E": 0.441,
+    "I": 1.195,
+    "G": 65.9,
+    "wall": 0.43,
+    "roads": 219,
+    "buildings": 716,
+    "method": "boeing_phi+spacematrix",
+    "source": "Overture Maps (OpenStreetMap-derived, ODbL)",
+    "confidence": 0.6
   },
   "27": {
     "name": "Ashdod",
-    "error": "'overpass-api.de' responded: 502 Bad Gateway # 502 Gateway Timeout\n\nThis Overpass API server is currently at capacity. All query workers are busy\nand the request queue is full.\n\n## What to do\n\nRetry your request using exponential backoff: wait a short interval, then retry.\nIf the request fails again, double the wait time and retry again.\n\n## For heavy or automated use\n\nThis public endpoint is intended for browser-based and human-operated tools.\nFor automated or high-volume use, run a local Overpass API instance:\n\nhttps://github.com/b1tw153/Overpass-API/blob/main/README.md\n"
+    "state_year": 2026,
+    "O": 0.581,
+    "E": 0.208,
+    "I": 0.513,
+    "G": 62.9,
+    "wall": 0.08,
+    "roads": 277,
+    "buildings": 202,
+    "method": "boeing_phi+spacematrix",
+    "source": "Overture Maps (OpenStreetMap-derived, ODbL)",
+    "confidence": 0.6
   },
   "26": {
     "name": "Chandigarh",
-    "error": "Graph must be unprojected to add edge bearings."
+    "state_year": 2026,
+    "O": 0.885,
+    "E": 0.23,
+    "I": 0.46,
+    "G": 78.3,
+    "wall": 0.17,
+    "roads": 182,
+    "buildings": 549,
+    "method": "boeing_phi+spacematrix",
+    "source": "Overture Maps (OpenStreetMap-derived, ODbL)",
+    "confidence": 0.6
   },
   "28": {
     "name": "Brasília",
-    "error": "Graph must be unprojected to add edge bearings."
+    "state_year": 2026,
+    "O": 0.516,
+    "E": 0.179,
+    "I": 1.286,
+    "G": 39.5,
+    "wall": 0.12,
+    "roads": 412,
+    "buildings": 67,
+    "method": "boeing_phi+spacematrix",
+    "source": "Overture Maps (OpenStreetMap-derived, ODbL)",
+    "confidence": 0.6
   },
   "17": {
     "name": "Manhattan",
-    "error": "HTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/interpreter (Caused by ConnectTimeoutError(<HTTPSConnection(host='overpass-api.de', port=443) at 0x7f56fdb361b0>, 'Connection to overpass-api.de timed out. (connect timeout=180)'))"
+    "state_year": 2026,
+    "O": 0.987,
+    "E": 0.588,
+    "I": 14.39,
+    "G": 48.9,
+    "wall": 0.57,
+    "roads": 422,
+    "buildings": 397,
+    "method": "boeing_phi+spacematrix",
+    "source": "Overture Maps (OpenStreetMap-derived, ODbL)",
+    "confidence": 0.6
   },
   "7": {
     "name": "Kyoto",
-    "error": "'overpass-api.de' responded: 502 Bad Gateway # 502 Gateway Timeout\n\nThis Overpass API server is currently at capacity. All query workers are busy\nand the request queue is full.\n\n## What to do\n\nRetry your request using exponential backoff: wait a short interval, then retry.\nIf the request fails again, double the wait time and retry again.\n\n## For heavy or automated use\n\nThis public endpoint is intended for browser-based and human-operated tools.\nFor automated or high-volume use, run a local Overpass API instance:\n\nhttps://github.com/b1tw153/Overpass-API/blob/main/README.md\n"
+    "state_year": 2026,
+    "O": 0.946,
+    "E": 0.422,
+    "I": 1.214,
+    "G": 59.6,
+    "wall": 0.54,
+    "roads": 245,
+    "buildings": 1947,
+    "method": "boeing_phi+spacematrix",
+    "source": "Overture Maps (OpenStreetMap-derived, ODbL)",
+    "confidence": 0.6
   },
   "10": {
     "name": "Siena",
-    "error": "HTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/interpreter (Caused by ConnectTimeoutError(<HTTPSConnection(host='overpass-api.de', port=443) at 0x7f56ff3d2900>, 'Connection to overpass-api.de timed out. (connect timeout=180)'))"
+    "state_year": 2026,
+    "O": 0.046,
+    "E": 0.502,
+    "I": 1.382,
+    "G": 56.0,
+    "wall": 0.78,
+    "roads": 446,
+    "buildings": 544,
+    "method": "boeing_phi+spacematrix",
+    "source": "Overture Maps (OpenStreetMap-derived, ODbL)",
+    "confidence": 0.6
   }
 }
