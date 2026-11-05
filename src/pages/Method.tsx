@@ -1,4 +1,4 @@
-import { CODES } from '../engine/codes';
+import { ALL_CODES as CODES } from '../engine/codes';
 import { CITY_CASES } from '../data/cases';
 import { FIT_THRESHOLD } from '../engine/measure';
 import { CodeMark } from '../components/Marks';
@@ -72,6 +72,10 @@ export default function Method() {
       <div className="method">
         <section>
           <h2>חמשת המחוונים</h2>
+          <p className="small" style={{ margin: '0 0 8px' }}>
+            <b>בקנה בניין</b> אותם חמישה, בפירוש של סעיף 4.2: סדר = סימטריה ומודול, עוצמה = שטח רצפות לטביעת רגל, סגירות = חלק המלא בחזית, היררכיה = 1 פחות חציון החללים לגדול שבהם, גרעין =
+            מפתח החזית. היחס R: <b>הקיר נושא את המבנה</b>, המקבילה של "המבנה מגדיר את הרחוב".
+          </p>
           <div className="ind">
             {IND.map((x) => (
               <div key={x.p}>
@@ -90,7 +94,7 @@ export default function Method() {
           </div>
         </section>
         <section>
-          <h2>{CODES.length} קודים</h2>
+          <h2>{CODES.length} קודים: 9 לעיר, 5 לבניין</h2>
           <div className="ind">
             {CODES.map((c) => (
               <div key={c.id} style={{ padding: '8px 10px' }}>

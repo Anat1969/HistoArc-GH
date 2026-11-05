@@ -32,7 +32,7 @@ export default function Home() {
     <div className="page">
       <div className="home">
         <section>
-          <div className="kicker">גנוטיפ אחד לעיר · {CODES.length} קודים · 35 מקרים · 5 מחוונים</div>
+          <div className="kicker">גנוטיפ אחד לעיר ולבניין · {CODES.length + 5} קודים · 38 מקרים · 5 מחוונים</div>
           <h1 className="hero-h">
             ערך משתנה: אבולוציה.
             <br />

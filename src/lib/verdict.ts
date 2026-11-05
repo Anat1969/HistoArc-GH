@@ -1,6 +1,6 @@
 import matrixJson from '../data/matrix.json';
-import { CITY_CASES, caseById, caseT, caseWall, type Case, type Transition } from '../data/cases';
-import { CODES } from '../engine/codes';
+import { casesFor, caseById, caseT, caseWall, type Case, type Transition } from '../data/cases';
+import { codesFor } from '../engine/codes';
 import { FIT_THRESHOLD, tSignature } from '../engine/measure';
 import type { CodeId, Knobs, Param, Theta } from '../engine/types';
 
@@ -54,17 +54,19 @@ export const MODEL_VERDICT: Record<ModelVerdict, { he: string; doc: Transition['
   out: { he: 'מחוץ למחולל', doc: null, color: 'var(--grey)' },
 };
 
-const firstUse = (code: CodeId) => Math.min(...CITY_CASES.filter((c) => c.code === code).map((c) => c.year));
+const firstUse = (code: CodeId, scale: 'city' | 'building' = 'city') => Math.min(...casesFor(scale).filter((c) => c.code === code).map((c) => c.year));
 
 export function judge(t: Transition): { verdict: ModelVerdict; reproducers: CodeId[]; by?: CodeId; err: number } {
   const to = caseById(t.to);
   if (!to || !to.theta) return { verdict: 'out', reproducers: [], err: NaN };
-  const reproducers = CODES.map((c) => c.id).filter((id) => fitOf(to, id) === 'full');
+  const scale = to.scale;
+  const reproducers = codesFor(scale).map((c) => c.id).filter((id) => fitOf(to, id) === 'full');
   const own = fitOf(to, t.from);
   const err = cell(to.id, t.from).e;
   if (own === 'full') return { verdict: 'evolution', reproducers, err };
   // a code that reproduces the new case and was already in use before the old paradigm: a return
-  const restoring = reproducers.filter((id) => id !== t.from && firstUse(id) < to.year);
+  // a return: the code existed before the paradigm it replaces, and before the new case
+  const restoring = reproducers.filter((id) => id !== t.from && firstUse(id, scale) < to.year && firstUse(id, scale) < firstUse(t.from, scale));
   restoring.sort((a, b) => (a === to.code ? -1 : b === to.code ? 1 : 0));
   if (restoring.length) return { verdict: 'restoration', reproducers, by: restoring[0], err };
   if (!reproducers.length) return { verdict: 'hybrid', reproducers, err };
@@ -80,14 +82,16 @@ export function agrees(t: Transition, v: ModelVerdict) {
 }
 
 /** headline numbers for the home page and lenses */
-export function stats() {
+export function stats(scale: 'city' | 'building' = 'city') {
+  const CASES_S = casesFor(scale);
+  const CODES_S = codesFor(scale);
   let full = 0;
   let numbersOnly = 0;
   let foreignFull = 0;
   let ownOk = 0;
-  for (const c of CITY_CASES) {
+  for (const c of CASES_S) {
     if (fitOf(c, c.code) === 'full') ownOk++;
-    for (const code of CODES) {
+    for (const code of CODES_S) {
       const f = fitOf(c, code.id);
       if (f === 'full') {
         full++;
@@ -96,7 +100,7 @@ export function stats() {
       if (f === 'numbers') numbersOnly++;
     }
   }
-  return { full, numbersOnly, foreignFull, ownOk, cities: CITY_CASES.length, runs: CITY_CASES.length * CODES.length };
+  return { full, numbersOnly, foreignFull, ownOk, cities: CASES_S.length, runs: CASES_S.length * CODES_S.length };
 }
 
 /** normalised θ distance, used for "nearest cases" */

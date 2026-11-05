@@ -136,7 +136,92 @@ export const CODES: Code[] = [
   },
 ];
 
-export const CODE: Record<CodeId, Code> = Object.fromEntries(CODES.map((c) => [c.id, c])) as Record<CodeId, Code>;
+/**
+ * Building scale: the same schema (T, R, P, θ) and the same five indicators, read at the scale of one building.
+ * R here is "the wall carries the building", the counterpart of "the building defines the street".
+ * Bounds are assessments [ה]; the grammars cited are the sources of P.
+ */
+export const BUILDING_CODES: Code[] = [
+  {
+    id: 'palladian',
+    scale: 'building',
+    name: 'פלאדיאני',
+    short: 'רשת חדרים סימטרית סביב אולם',
+    lynch: 'cosmic',
+    T: ['אולם מרכזי', 'חדר', 'אכסדרה', 'ציר'],
+    R: ['הקיר נושא את המבנה', 'החדרים מסודרים סביב ציר'],
+    P: ['רשת 5×3 ביחסים הרמוניים (Stiny & Mitchell 1978)'],
+    bounds: { O: [0.75, 1], H: [0.4, 1], G: [3, 8], E: [0.6, 0.92], I: [1, 3] },
+    floorsMax: 3,
+    depth: null,
+    wall: true,
+    note: 'וילה רוטונדה: אולם מרכזי תחת כיפה, ארבע אכסדרות.',
+  },
+  {
+    id: 'prairie',
+    scale: 'building',
+    name: 'בית ערבה',
+    short: 'אח במרכז, זרועות החוצה',
+    lynch: 'organic',
+    T: ['אח מרכזית', 'זרוע', 'גג תלוי', 'פס חלונות'],
+    R: ['הקיר נושא את המבנה', 'החללים זורמים סביב האח'],
+    P: ['צלב זרועות מהאח החוצה (Koning & Eizenberg 1981)'],
+    bounds: { O: [0.3, 0.8], H: [0.2, 0.7], G: [1, 3], E: [0.35, 0.75], I: [1, 2.2] },
+    floorsMax: 2,
+    depth: null,
+    wall: true,
+    note: 'בית רובי: הקופסה נשברת, הגג נמתח מעבר לקירות.',
+  },
+  {
+    id: 'frame',
+    scale: 'building',
+    name: 'שלד',
+    short: 'עמוד, תקרה ומישור חופשי',
+    lynch: 'machine',
+    T: ['עמוד', 'תקרה', 'קיר מסך', 'גרעין שירות'],
+    R: ['השלד נפרד מהקיר', 'התוכנית חופשית'],
+    P: ['רשת עמודים, החלוקה חופשית (דום-אינו, 1914)'],
+    bounds: { O: [0.5, 1], H: [0, 0.45], G: [4, 9], E: [0.1, 0.6], I: [1.5, 8] },
+    floorsMax: 8,
+    depth: null,
+    wall: false,
+    note: 'וילה סבואה, הבאוהאוס: הקיר משוחרר מהעומס ונפתח.',
+  },
+  {
+    id: 'capsule',
+    scale: 'building',
+    name: 'קפסולה',
+    short: 'גרעין ויחידות מתחלפות',
+    lynch: 'machine',
+    T: ['גרעין', 'קפסולה', 'חלון עגול'],
+    R: ['הקיר נושא את המבנה: הקפסולה היא קופסה', 'היחידה מתחלפת, הגרעין נשאר'],
+    P: ['הוספת יחידות לגרעין לאורך זמן'],
+    bounds: { O: [0.5, 0.9], H: [0.4, 0.85], G: [2, 4], E: [0.4, 0.9], I: [4, 16] },
+    floorsMax: 16,
+    depth: null,
+    wall: true,
+    note: 'נאקאגין: הזמן נכנס לקוד, כל קפסולה ניתנת להחלפה.',
+  },
+  {
+    id: 'continuous',
+    scale: 'building',
+    name: 'משטח רציף',
+    short: 'קיר, רצפה וגג באותו משטח',
+    lynch: 'algorithmic',
+    T: ['משטח רציף', 'חלל פנימי פתוח'],
+    R: ['הקיר נושא את המבנה: המעטפת היא המבנה', 'אין הפרדה בין קיר לגג'],
+    P: ['אלגוריתם על שדה רציף'],
+    bounds: { O: [0, 0.35], H: [0.3, 0.8], G: [1, 4], E: [0.1, 0.6], I: [1, 4] },
+    floorsMax: 4,
+    depth: null,
+    wall: true,
+    note: 'מרכז היידר אלייב: האלמנטים הבדידים נמסים לשדה אחד.',
+  },
+];
+
+export const ALL_CODES = [...CODES, ...BUILDING_CODES];
+export const codesFor = (scale: 'city' | 'building') => (scale === 'building' ? BUILDING_CODES : CODES);
+export const CODE: Record<CodeId, Code> = Object.fromEntries(ALL_CODES.map((c) => [c.id, c])) as Record<CodeId, Code>;
 
 export const LYNCH: Record<Lynch, { name: string; color: string; note: string }> = {
   cosmic: { name: 'קוסמי', color: 'var(--cosmic)', note: 'העיר כמודל של סדר עולם' },
@@ -156,9 +241,18 @@ export const CODE_T: Record<CodeId, { center: boolean; deadEnd: boolean; court: 
   garden: { center: false, deadEnd: false, court: false },
   tower: { center: false, deadEnd: false, court: false },
   field: { center: false, deadEnd: false, court: false },
+  // building scale: center = dominant central hall, deadEnd = solid core, court = free-standing structural column
+  palladian: { center: true, deadEnd: false, court: false },
+  prairie: { center: false, deadEnd: true, court: false },
+  frame: { center: false, deadEnd: true, court: true },
+  capsule: { center: false, deadEnd: true, court: false },
+  continuous: { center: true, deadEnd: false, court: false },
 };
 
 export const T_LABEL = { center: 'מרכז קדוש או אזרחי', deadEnd: 'רחוב ללא מוצא', court: 'בית חצר' } as const;
+export const T_LABEL_B = { center: 'אולם מרכזי שולט', deadEnd: 'גרעין מסיבי', court: 'עמוד נושא חופשי' } as const;
+export const tLabel = (scale: 'city' | 'building' | undefined) => (scale === 'building' ? T_LABEL_B : T_LABEL);
+export const R_LABEL = { city: 'המבנה מגדיר את הרחוב', building: 'הקיר נושא את המבנה' } as const;
 
 export const codeColor = (id: CodeId) => LYNCH[CODE[id].lynch].color;
 
@@ -173,4 +267,9 @@ export const CODE_MARK: Record<CodeId, 'circle' | 'square' | 'diamond' | 'triang
   ideal: 'circle',
   grand: 'diamond',
   field: 'circle',
+  palladian: 'square',
+  prairie: 'circle',
+  frame: 'square',
+  capsule: 'triangle',
+  continuous: 'diamond',
 };

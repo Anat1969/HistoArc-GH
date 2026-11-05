@@ -1,5 +1,6 @@
 import type { Building, Code, CodeId, Knobs, Lot, Model, Poly, Street, Theta } from './types';
 import { CODE } from './codes';
+import { generateBuilding } from './building';
 import { area, bilinear, centroid, distLine, insetConvex, isConvexCCW, lerp, scaleAbout, type V } from './geom';
 import { hash3, hs, vnoise } from './rng';
 import { coverage, deadEndShare, hierarchyOf, meanError, orderOf, paramErrors } from './measure';
@@ -603,6 +604,7 @@ export interface GenOpts {
 }
 
 export function generate(target: Theta, codeId: CodeId, opts: GenOpts = {}): Model {
+  if (CODE[codeId].scale === 'building') return generateBuilding(target, codeId, opts.knobs);
   const code = CODE[codeId];
   const th = clampTheta(target, code);
   const G = th.G;
@@ -641,6 +643,7 @@ export function generate(target: Theta, codeId: CodeId, opts: GenOpts = {}): Mod
   const { sk, b, m } = run(knobs.a, knobs.k);
   const errors = paramErrors(m, target);
   return {
+    scale: 'city',
     code: codeId,
     target,
     clamped: th,

@@ -46,13 +46,15 @@ export function Plan({ model, windowM = 700, scaleBar = false, className }: { mo
         g.lineTo(tx(st.b[0]), ty(st.b[1]));
         g.stroke();
       }
-      for (const b of model.buildings) {
+      const ground = model.buildings.filter((b) => model.scale !== 'building' || (b.z0 ?? 0) < 1);
+      for (const b of ground) {
+        if (b.kind === 'slab') continue;
         poly(b.poly);
-        g.fillStyle = b.kind === 'fabric' ? '#141414' : color;
+        g.fillStyle = b.kind === 'glass' ? '#9fb3c2' : b.kind === 'fabric' || b.kind === 'column' ? '#141414' : color;
         g.fill();
       }
       if (scaleBar) {
-        const m = windowM > 1500 ? 500 : 100;
+        const m = windowM > 1500 ? 500 : windowM < 150 ? 10 : 100;
         g.fillStyle = '#111';
         g.fillRect(8, W - 12, m * s, 3);
         g.font = '10px IBM Plex Mono, monospace';

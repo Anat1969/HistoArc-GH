@@ -53,18 +53,21 @@ export const CASES: Case[] = [
   { id: 20, he: 'לצ\'וורת\'', orig: 'Letchworth Garden City', period: '1903', year: 1903, paradigm: 'אורגני, עיר גנים', scale: 'city', code: 'garden', theta: { O: 0.3, I: 0.3, E: 0.2, H: 0.6, G: 150 }, commons: C + 'Letchworth_Garden_City', status: 'living' },
   { id: 21, he: 'נהלל', orig: 'Nahalal', period: '1921', year: 1921, paradigm: 'קוסמי, מושב רדיאלי', scale: 'city', code: 'ideal', hybrid: 'garden', wallOverride: false, theta: { O: 0.85, I: 0.05, E: 0.03, H: 0.95, G: 400 }, commons: C + 'Nahalal', status: 'living' },
   { id: 22, he: 'תל אביב, תוכנית גדס', orig: 'Tel Aviv, Geddes Plan', period: '1925–1927', year: 1925, paradigm: 'אורגני-מדעי, עיר גנים', scale: 'city', code: 'garden', theta: { O: 0.6, I: 1.4, E: 0.4, H: 0.5, G: 200 }, commons: C + 'White_City_(Tel_Aviv)', status: 'living' },
-  { id: 23, he: 'בניין הבאוהאוס, דסאו', orig: 'Bauhaus, Dessau', period: '1925–1926', year: 1925, paradigm: 'מודרניזם (קנה מבנה)', scale: 'building', code: 'tower', theta: null, commons: C + 'Bauhaus_Dessau', status: 'built' },
+  { id: 23, he: 'בניין הבאוהאוס, דסאו', orig: 'Bauhaus, Dessau', period: '1925–1926', year: 1925, paradigm: 'מודרניזם (קנה מבנה)', scale: 'building', code: 'frame', theta: { O: 0.9, I: 2.5, E: 0.3, H: 0.2, G: 6 }, commons: C + 'Bauhaus_Dessau', status: 'built' },
   { id: 24, he: 'העיר הקורנת', orig: 'Ville Radieuse', period: '1930 (לא נבנתה)', year: 1930, paradigm: 'מכונה, מגדל בפארק', scale: 'city', code: 'tower', theta: { O: 0.95, I: 2.5, E: 0.12, H: 0.7, G: 400 }, commons: C + 'Ville_Radieuse', status: 'unbuilt' },
   { id: 25, he: 'ברודאייקר סיטי', orig: 'Broadacre City', period: '1932–1935 (לא נבנתה)', year: 1932, paradigm: 'מכונה מפוזרת', scale: 'city', code: 'tower', hybrid: 'garden', theta: { O: 0.95, I: 0.05, E: 0.03, H: 0.1, G: 1600 }, commons: C + 'Broadacre_City', status: 'unbuilt' },
   { id: 26, he: 'צ\'נדיגר', orig: 'Chandigarh, ਚੰਡੀਗੜ੍ਹ', period: '1951 ואילך', year: 1951, paradigm: 'מכונה עם ראש קוסמי', scale: 'city', code: 'tower', hybrid: 'cosmic', theta: { O: 0.9, I: 0.6, E: 0.25, H: 0.85, G: 980 }, gNote: '800×1200', commons: C + 'Chandigarh', status: 'living' },
   { id: 27, he: 'אשדוד', orig: 'Ashdod', period: '1956 ואילך', year: 1956, paradigm: 'עיר חדשה, יחידת שכונה', scale: 'city', code: 'tower', theta: { O: 0.5, I: 1.0, E: 0.2, H: 0.6, G: 800 }, commons: C + 'Ashdod', status: 'living' },
   { id: 28, he: 'ברזיליה, הפלאנו פילוטו', orig: 'Brasília, Plano Piloto', period: '1957 ואילך', year: 1957, paradigm: 'מכונה עם ציר קוסמי', scale: 'city', code: 'tower', hybrid: 'cosmic', theta: { O: 0.6, I: 0.6, E: 0.15, H: 0.95, G: 280 }, commons: C + 'Plano_Piloto', status: 'living' },
   { id: 29, he: 'באר שבע, שיכון לדוגמה', orig: "Be'er Sheva", period: '1959–1964 [נ]', year: 1960, paradigm: 'שטיח בנייה, מודרניזם מאוחר', scale: 'city', code: 'grid', theta: { O: 0.7, I: 0.8, E: 0.5, H: 0.3, G: 30 }, commons: C + 'Beersheba', status: 'living' },
-  { id: 30, he: 'מגדל הקפסולות נאקאגין', orig: 'Nakagin Capsule Tower, 中銀カプセルタワー', period: '1972 (נהרס 2022)', year: 1972, paradigm: 'מטבוליזם', scale: 'building', code: 'tower', theta: null, commons: C + 'Nakagin_Capsule_Tower', status: 'demolished' },
+  { id: 30, he: 'מגדל הקפסולות נאקאגין', orig: 'Nakagin Capsule Tower, 中銀カプセルタワー', period: '1972 (נהרס 2022)', year: 1972, paradigm: 'מטבוליזם', scale: 'building', code: 'capsule', theta: { O: 0.7, I: 11, E: 0.5, H: 0.6, G: 3.2 }, gNote: '2.5×4', commons: C + 'Nakagin_Capsule_Tower', status: 'demolished' },
   { id: 31, he: 'סיסייד, פלורידה', orig: 'Seaside, Florida', period: '1980 ואילך', year: 1980, paradigm: 'אורבניזם חדש', scale: 'city', code: 'grid', theta: { O: 0.5, I: 0.4, E: 0.3, H: 0.7, G: 70 }, commons: C + 'Seaside,_Florida', status: 'living' },
   { id: 32, he: 'דהראווי, מומבאי', orig: 'Dharavi, धारावी', period: 'מאה 20', year: 1950, paradigm: 'אורגני בלתי-פורמלי', scale: 'city', code: 'organic', theta: { O: 0.1, I: 1.5, E: 0.9, H: 0.2, G: 20 }, commons: C + 'Dharavi', status: 'living' },
   { id: 33, he: 'מצדר', orig: 'Masdar City, مدينة مصدر', period: '2008 ואילך', year: 2008, paradigm: 'אקולוגי-טכנולוגי, מדינה מחודשת', scale: 'city', code: 'grid', hybrid: 'organic', theta: { O: 0.8, I: 2.5, E: 0.6, H: 0.5, G: 50 }, commons: C + 'Masdar_City', status: 'living' },
-  { id: 34, he: 'מרכז היידר אלייב, באקו', orig: 'Heydar Aliyev Center, Bakı', period: '2007–2012', year: 2007, paradigm: 'פרמטריציזם (קנה מבנה)', scale: 'building', code: 'field', theta: null, commons: C + 'Heydar_Aliyev_Center', status: 'built' },
+  { id: 34, he: 'מרכז היידר אלייב, באקו', orig: 'Heydar Aliyev Center, Bakı', period: '2007–2012', year: 2007, paradigm: 'פרמטריציזם (קנה מבנה)', scale: 'building', code: 'continuous', theta: { O: 0.1, I: 2, E: 0.2, H: 0.6, G: 2 }, commons: C + 'Heydar_Aliyev_Center', status: 'built' },
+  { id: 36, he: 'וילה רוטונדה, ויצ\'נצה', orig: 'Villa La Rotonda, Vicenza', period: '1567–1592', year: 1567, paradigm: 'רנסנס, דקדוק פלאדיאני', scale: 'building', code: 'palladian', theta: { O: 0.95, I: 2.2, E: 0.82, H: 0.85, G: 5 }, commons: C + 'Villa_La_Rotonda', status: 'built' },
+  { id: 37, he: 'בית רובי, שיקגו', orig: 'Frederick C. Robie House, Chicago', period: '1909–1910', year: 1909, paradigm: 'אדריכלות אורגנית, בית ערבה', scale: 'building', code: 'prairie', theta: { O: 0.5, I: 1.5, E: 0.5, H: 0.45, G: 1.2 }, commons: C + 'Frederick_C._Robie_House', status: 'built' },
+  { id: 38, he: 'וילה סבואה, פואסי', orig: 'Villa Savoye, Poissy', period: '1928–1931', year: 1928, paradigm: 'מודרניזם, חמש הנקודות', scale: 'building', code: 'frame', theta: { O: 0.85, I: 1.8, E: 0.45, H: 0.25, G: 4.75 }, commons: C + 'Villa_Savoye', status: 'built' },
   { id: 35, he: 'אשדוד, טבעות והמע"ר הימי', orig: 'Ashdod', period: 'שנות ה-2020', year: 2022, paradigm: 'עירוניות מחודשת', scale: 'city', code: 'grid', hybrid: 'tower', theta: { O: 0.5, I: 2.5, E: 0.35, H: 0.7, G: 120 }, commons: '', status: 'living' },
 ];
 
@@ -98,7 +101,9 @@ for (const c of CASES) {
   c.measuredYear = m.state_year;
 }
 
-export const CITY_CASES = CASES.filter((c) => c.theta);
+export const CITY_CASES = CASES.filter((c) => c.theta && c.scale === 'city');
+export const BUILDING_CASES = CASES.filter((c) => c.theta && c.scale === 'building');
+export const casesFor = (scale: 'city' | 'building') => (scale === 'building' ? BUILDING_CASES : CITY_CASES);
 
 /** relation R: does the building define the street (street wall) in this case? */
 export const caseWall = (c: Case) => c.wallOverride ?? CODE[c.code].wall;
@@ -129,6 +134,15 @@ export const TRANSITIONS: Transition[] = [
   { id: 't9', label: 'העיר המסורתית ← מודרניזם', from: 'grid', to: 24, doc: 'revolution', docNote: 'בוטל רחוב-המסדרון, הפרדת שימושים' },
   { id: 't10', label: 'מודרניזם ← אורבניזם חדש', from: 'tower', to: 31, doc: 'restoration', docNote: 'שוחזרו T ו-R של העיר המסורתית' },
   { id: 't11', label: 'אשדוד 1956 ← אשדוד היום', from: 'tower', to: 35, doc: 'restoration', docNote: 'טענת המחקר: חזרת "המבנה מגדיר רחוב"' },
+];
+
+/** building-scale transitions: two from spec section 9, three are assessments [ה] */
+export const BUILDING_TRANSITIONS: Transition[] = [
+  { id: 'b1', label: 'פלאדיו ← רייט', from: 'palladian', to: 37, doc: 'revolution', docNote: 'שבירת הקופסה: האח במרכז והזרועות החוצה [ה]' },
+  { id: 'b2', label: 'רייט ← לה קורבוזיה', from: 'prairie', to: 38, doc: 'revolution', docNote: 'השלד נפרד מהקיר: חמש הנקודות, 1927 [ה]' },
+  { id: 'b3', label: 'וילה סבואה ← הבאוהאוס', from: 'frame', to: 23, doc: 'evolution', docNote: 'אותו שלד, ערכים אחרים [ה]' },
+  { id: 'b4', label: 'מודרניזם ← מטבוליזם', from: 'frame', to: 30, doc: 'revolution', docNote: 'הזמן כרכיב: יחידות מתחלפות (אפיון, סעיף 9)' },
+  { id: 'b5', label: 'מודרניזם ← פרמטריציזם', from: 'frame', to: 34, doc: 'revolution', docNote: 'שדות רציפים במקום אלמנטים בדידים (אפיון, סעיף 9)' },
 ];
 
 export const DOC_TYPE: Record<Transition['doc'], { he: string; color: string }> = {

@@ -1,10 +1,11 @@
 // Consistency gate, part of every build: each city case must be reproduced by its own code,
 // unless it is documented as a hybrid whose relation R differs from its primary code.
-import { CITY_CASES } from '../src/data/cases';
+import { CITY_CASES, BUILDING_CASES } from '../src/data/cases';
+const ALL = [...CITY_CASES, ...BUILDING_CASES];
 import { fitOf } from '../src/lib/verdict';
 let bad = 0;
 let anomalies = 0;
-for (const c of CITY_CASES) {
+for (const c of ALL) {
   const f = fitOf(c, c.code);
   const allowed = c.wallOverride !== undefined && f === 'numbers';
   if (f !== 'full' && c.assessed) {
@@ -19,4 +20,4 @@ for (const c of CITY_CASES) {
   }
 }
 if (bad) process.exit(1);
-console.log(`check: ${CITY_CASES.length - anomalies} of ${CITY_CASES.length} city cases reproduced by their own code; ${anomalies} measured anomalies`);
+console.log(`check: ${ALL.length - anomalies} of ${ALL.length} cases (${BUILDING_CASES.length} buildings) reproduced by their own code; ${anomalies} measured anomalies`);

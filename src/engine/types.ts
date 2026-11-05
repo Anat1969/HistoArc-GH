@@ -21,7 +21,14 @@ export type CodeId =
   | 'grand'
   | 'garden'
   | 'tower'
-  | 'field';
+  | 'field'
+  | 'palladian'
+  | 'prairie'
+  | 'frame'
+  | 'capsule'
+  | 'continuous';
+
+export type Scale = 'city' | 'building';
 
 export type Range = [number, number];
 
@@ -34,7 +41,8 @@ export interface Code {
   T: string[]; // element types
   R: string[]; // relations
   P: string[]; // generative rules
-  bounds: { O: Range; H: Range; G: Range; E?: Range };
+  bounds: { O: Range; H: Range; G: Range; E?: Range; I?: Range };
+  scale?: Scale; // default city
   floorsMax: number;
   /** building depth range for perimeter codes (m); null = free-standing pavilions */
   depth: Range | null;
@@ -48,8 +56,10 @@ export type Poly = [number, number][];
 export interface Building {
   poly: Poly;
   floors: number;
-  kind: 'fabric' | 'monument' | 'wall';
+  kind: 'fabric' | 'monument' | 'wall' | 'slab' | 'glass' | 'column';
   w: number; // height weight (debug)
+  z0?: number; // base elevation (m), building scale
+  h?: number; // height (m), overrides floors × 3.3
 }
 
 export interface Street {
@@ -79,6 +89,7 @@ export interface Knobs {
 }
 
 export interface Model {
+  scale?: Scale;
   code: CodeId;
   target: Theta;
   clamped: Theta;

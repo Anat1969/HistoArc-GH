@@ -2,14 +2,18 @@
 // Output: src/data/matrix.json (consumed by the app; regenerated on every build).
 import { writeFileSync } from 'node:fs';
 import { generate } from '../src/engine/generate';
-import { CODES } from '../src/engine/codes';
-import { CITY_CASES } from '../src/data/cases';
+import { CODES, BUILDING_CODES } from '../src/engine/codes';
+import { CITY_CASES, BUILDING_CASES } from '../src/data/cases';
 
 const r = (x: number, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
 const out: Record<string, unknown> = {};
 const t0 = Date.now();
-for (const c of CITY_CASES) {
-  for (const code of CODES) {
+const pairs = [
+  ...CITY_CASES.flatMap((c) => CODES.map((code) => [c, code] as const)),
+  ...BUILDING_CASES.flatMap((c) => BUILDING_CODES.map((code) => [c, code] as const)),
+];
+for (const [c, code] of pairs) {
+  {
     const m = generate(c.theta!, code.id);
     out[`${c.id}:${code.id}`] = {
       e: r(m.error),

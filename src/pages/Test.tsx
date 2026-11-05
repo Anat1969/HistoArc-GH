@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { CITY_CASES, DOC_TYPE, TRANSITIONS, caseById, caseWall } from '../data/cases';
-import { CODE, CODES, T_LABEL } from '../engine/codes';
+import { BUILDING_TRANSITIONS, DOC_TYPE, TRANSITIONS, casesFor, caseById, caseWall } from '../data/cases';
+import { CODE, codesFor, tLabel } from '../engine/codes';
 import type { CodeId } from '../engine/types';
 import { agrees, cell, fitOf, structureOf, FIT_LABEL, FIT_THRESHOLD, judge, MODEL_VERDICT, stats } from '../lib/verdict';
 import { go } from '../lib/route';
@@ -13,10 +13,17 @@ const WHY: Record<string, string> = {
 };
 
 export default function Test() {
-  const st = stats();
+  const [scale, setScale] = useState<'city' | 'building'>('city');
+  const isB = scale === 'building';
+  const CODES = codesFor(scale);
+  const TRANS = isB ? BUILDING_TRANSITIONS : TRANSITIONS;
+  const T_LABEL = tLabel(scale);
+  const st = stats(scale);
   const [tip, setTip] = useState<{ x: number; y: number; caseId: number; code: CodeId } | null>(null);
-  const rows = [...CITY_CASES].sort((a, b) => a.year - b.year);
-  const judged = TRANSITIONS.map((t) => ({ t, j: judge(t) }));
+  const rows = [...casesFor(scale)].sort((a, b) => a.year - b.year);
+  const judged = TRANS.map((t) => ({ t, j: judge(t) }));
+  // the same relation, broken at two scales by modernism
+  const cross = { city: judge(TRANSITIONS.find((t) => t.id === 't9')!), building: judge(BUILDING_TRANSITIONS.find((t) => t.id === 'b2')!) };
   const agree = judged.filter(({ t, j }) => agrees(t, j.verdict)).length;
   const ashdod = judged.find(({ t }) => t.id === 't11');
 
@@ -33,17 +40,33 @@ export default function Test() {
 
   return (
     <div className="page">
+      <div className="filters" role="tablist" aria-label="קנה מידה" style={{ marginBottom: 8 }}>
+        <button className="press" aria-pressed={!isB} onClick={() => setScale('city')}>
+          עיר
+        </button>
+        <button className="press" aria-pressed={isB} onClick={() => setScale('building')}>
+          בניין
+        </button>
+      </div>
       <div className="lens">
         <div className="kicker">
-          מבחן הקוד · {st.runs} הרצות: {st.cities} ערים × {CODES.length} קודים
+          מבחן הקוד · {st.runs} הרצות: {st.cities} {isB ? 'בניינים' : 'ערים'} × {CODES.length} קודים
         </div>
         <h1>
           המספרים לבדם לא מבדילים בין קודים. <mark>המבנה, R ו-T,</mark> כן.
         </h1>
+        {isB ? (
+          <p>
+            <b>{st.ownOk}</b> מתוך <b>{st.cities}</b> הבניינים משוחזרים בקוד שלהם, {st.foreignFull ? <>ו-<b>{st.foreignFull}</b> בקוד זר</> : 'ואף אחד לא משוחזר במלואו בקוד זר'}. {agree} מתוך {TRANS.length} המעברים מסכימים עם האפיון.
+            <br />
+            <mark>אותו יחס נשבר בשני קני מידה, בהפרש של שנתיים:</mark> בבניין נעלם "הקיר נושא את המבנה" (וילה סבואה, 1928), ובעיר נעלם "המבנה מגדיר את הרחוב" (העיר הקורנת, 1930). המודל מסווג את שניהם כ{MODEL_VERDICT[cross.building.verdict].he.split(' ')[0]}.
+          </p>
+        ) : (
         <p>
-          ב-<b>{st.foreignFull}</b> הרצות קוד זר משחזר עיר במלואה. ב-<b>{st.numbersOnly}</b> נוספות המספרים תואמים, אבל דופן הרחוב או האלמנטים שונים. {agree} מתוך {TRANSITIONS.length} המעברים ההיסטוריים מסכימים עם
-          האפיון. {TRANSITIONS.length - agree} הם אנומליות, וכל אחת מצביעה על גן חסר.
+          ב-<b>{st.foreignFull}</b> הרצות קוד זר משחזר עיר במלואה. ב-<b>{st.numbersOnly}</b> נוספות המספרים תואמים, אבל דופן הרחוב או האלמנטים שונים. {agree} מתוך {TRANS.length} המעברים ההיסטוריים מסכימים עם
+          האפיון. {TRANS.length - agree} הם אנומליות, וכל אחת מצביעה על גן חסר.
         </p>
+        )}
       </div>
       <div className="test">
         <section>
@@ -199,7 +222,7 @@ export default function Test() {
                   {(['O', 'I', 'E', 'H', 'G'] as const).map((p) => `${p} ${x.p[p].toFixed(2)}`).join(' · ')}
                 </div>
                 <div className="tiny muted">
-                  דופן רחוב: במודל {Math.round(x.m.wall * 100)}%, במקרה {caseWall(c) ? 'רציפה' : 'נעדרת'}.
+                  {isB ? `הקיר נושא: במודל ${x.m.wall >= 0.5 ? 'כן' : 'לא'}, במקרה ${caseWall(c) ? 'כן' : 'לא'}.` : `דופן רחוב: במודל ${Math.round(x.m.wall * 100)}%, במקרה ${caseWall(c) ? 'רציפה' : 'נעדרת'}.`}
                   {structureOf(c, x.m).tDiff.length > 0 && <> אלמנטים שונים: {structureOf(c, x.m).tDiff.map((k) => T_LABEL[k]).join(', ')}.</>} הסטייה הגדולה: {PARAM_META[(['O', 'I', 'E', 'H', 'G'] as const).reduce((a, b) => (x.p[a] > x.p[b] ? a : b))].he}.
                 </div>
               </>

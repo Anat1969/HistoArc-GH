@@ -116,7 +116,8 @@ export default function Atlas() {
     const key = (c: Case) => (sort === 'year' ? c.year : c.theta ? c.theta[sort] : -1);
     return [...l].sort((a, b) => key(a) - key(b));
   }, [lynch, sort]);
-  const city = list.filter((c) => c.theta);
+  const city = list.filter((c) => c.theta && c.scale === 'city');
+  const blds = list.filter((c) => c.scale === 'building').length;
   const walls = city.filter((c) => caseWall(c)).length;
   const ownOk = city.filter((c) => fitOf(c, c.code) === 'full').length;
 
@@ -125,7 +126,7 @@ export default function Atlas() {
       <div className="lens">
         <div className="kicker">פרלל בנוסח דוראן · 1799–1801</div>
         <h1>
-          {city.length} ערים באותו קנה מידה: <mark>700 מ'</mark> בכל לוח.
+          {city.length} ערים באותו קנה מידה: <mark>700 מ'</mark> בכל לוח.{blds ? ` ${blds} בניינים: 70 מ'.` : ''}
         </h1>
         <p>
           כל תוכנית נוצרה מהקוד שלה ומחמשת הערכים שלה. <b>{ownOk}</b> מתוך <b>{city.length}</b> משוחזרות בקוד שלהן. ב-<b>{walls}</b> הבניין מגדיר את הרחוב, וב-
@@ -166,7 +167,7 @@ export default function Atlas() {
                 <div className="plate">
                   {c.theta ? (
                     models[c.id] ? (
-                      <Plan model={models[c.id]} />
+                      <Plan model={models[c.id]} windowM={c.scale === 'building' ? 70 : 700} />
                     ) : (
                       <div className="placeholder">מחולל</div>
                     )

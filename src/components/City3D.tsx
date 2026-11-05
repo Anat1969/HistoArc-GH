@@ -22,7 +22,8 @@ function prisms(bs: Building[], base = 0.4): THREE.BufferGeometry {
     nor.push(...n, ...n, ...n);
   };
   for (const b of bs) {
-    const h = base + b.floors * FLOOR;
+    const z0 = b.z0 ?? base;
+    const h = z0 + (b.h ?? b.floors * FLOOR);
     const p = b.poly;
     const ccw = p.reduce((s, q, i) => s + q[0] * p[(i + 1) % p.length][1] - p[(i + 1) % p.length][0] * q[1], 0) > 0;
     const P = ccw ? p : [...p].reverse();
@@ -37,8 +38,8 @@ function prisms(bs: Building[], base = 0.4): THREE.BufferGeometry {
       const dy = c[1] - a[1];
       const L = Math.hypot(dx, dy) || 1;
       const n = [dy / L, 0, dx / L];
-      const A0 = [a[0], base, -a[1]];
-      const C0 = [c[0], base, -c[1]];
+      const A0 = [a[0], z0, -a[1]];
+      const C0 = [c[0], z0, -c[1]];
       const A1 = [a[0], h, -a[1]];
       const C1 = [c[0], h, -c[1]];
       push(A0, C0, C1, n);
@@ -91,9 +92,13 @@ function Scene({ model, rise }: { model: Model; rise: number }) {
   const reduce = useMemo(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches, []);
   const codeColor = HEX[LYNCH[CODE[model.code].lynch].color];
   const geo = useMemo(() => {
-    const fabric = prisms(model.buildings.filter((b) => b.kind === 'fabric'));
-    const special = prisms(model.buildings.filter((b) => b.kind !== 'fabric'));
-    return { fabric, special, plates: plates(model), greens: greens(model), axes: axisLines(model) };
+    const of = (...k: string[]) => model.buildings.filter((b) => k.includes(b.kind));
+    const fabric = prisms(of('fabric'));
+    const special = prisms(of('monument', 'wall'));
+    const slab = prisms(of('slab'));
+    const glass = prisms(of('glass'));
+    const column = prisms(of('column'));
+    return { fabric, special, slab, glass, column, plates: plates(model), greens: greens(model), axes: axisLines(model) };
   }, [model]);
   useEffect(
     () => () => {
@@ -133,27 +138,37 @@ function Scene({ model, rise }: { model: Model; rise: number }) {
         <mesh geometry={geo.special} castShadow receiveShadow>
           <meshStandardMaterial color={codeColor} roughness={0.8} side={THREE.DoubleSide} />
         </mesh>
+        <mesh geometry={geo.slab} castShadow receiveShadow>
+          <meshStandardMaterial color="#d9d8d2" roughness={0.9} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh geometry={geo.column} castShadow>
+          <meshStandardMaterial color="#3a3a3a" roughness={0.7} />
+        </mesh>
+        <mesh geometry={geo.glass}>
+          <meshStandardMaterial color="#9fb3c2" roughness={0.15} metalness={0.1} transparent opacity={0.45} side={THREE.DoubleSide} />
+        </mesh>
       </group>
     </>
   );
 }
 
-function Rig({ site }: { site: number }) {
+function Rig({ site, small }: { site: number; small: boolean }) {
   const { camera } = useThree();
   useEffect(() => {
-    const d = Math.max(600, site * 1.55);
+    const d = small ? Math.max(40, site * 1.5) : Math.max(600, site * 1.55);
     camera.position.set(-d * 0.55, d * 0.7, d * 0.75);
-    camera.near = 1;
+    camera.near = small ? 0.3 : 1;
     camera.far = d * 12;
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
-  }, [site, camera]);
+  }, [site, small, camera]);
   return null;
 }
 
 export default function City3D({ model, rise = 0 }: { model: Model | null; rise?: number }) {
   const site = model?.site ?? 700;
-  const sh = Math.max(500, site * 0.8);
+  const small = model?.scale === 'building';
+  const sh = small ? Math.max(40, site) : Math.max(500, site * 0.8);
   return (
     <Canvas shadows dpr={[1, 2]} camera={{ fov: 32 }} gl={{ antialias: true, preserveDrawingBuffer: true }} style={{ position: 'absolute', inset: 0 }}>
       <color attach="background" args={['#fbfbf9']} />
@@ -171,9 +186,9 @@ export default function City3D({ model, rise = 0 }: { model: Model | null; rise?
         shadow-camera-far={sh * 4}
         shadow-bias={-0.0004}
       />
-      <Rig site={site} />
+      <Rig site={site} small={small} />
       {model && <Scene model={model} rise={rise} />}
-      <OrbitControls makeDefault enableDamping maxPolarAngle={Math.PI / 2.1} minDistance={60} maxDistance={site * 4} />
+      <OrbitControls makeDefault enableDamping target={[0, small ? site * 0.2 : 0, 0]} maxPolarAngle={Math.PI / 2.1} minDistance={small ? 8 : 60} maxDistance={site * 4} />
     </Canvas>
   );
 }
