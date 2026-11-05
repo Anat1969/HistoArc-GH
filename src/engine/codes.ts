@@ -1,0 +1,146 @@
+import type { Code, CodeId, Lynch } from './types';
+
+/**
+ * Eight codes. Each code is (T, R, P) plus the region of θ its rules permit.
+ * The bounds are assessments [ה]: they encode what the rules allow
+ * (e.g. a street-wall block is limited by daylight depth and by stair access).
+ */
+export const CODES: Code[] = [
+  {
+    id: 'organic',
+    name: 'אורגני',
+    short: 'צמיחה בתוספות',
+    lynch: 'organic',
+    T: ['רחוב מתפתל', 'חלקה צרה', 'חצר', 'כיכר מקרית'],
+    R: ['המבנה מגדיר את הרחוב', 'הרחוב נגזר מהחלקות'],
+    P: ['צמיחה בתוספות', 'עיוות רציף של הרשת'],
+    bounds: { O: [0, 0.4], H: [0.2, 0.75], G: [15, 150] },
+    floorsMax: 6,
+    depth: [6, 999],
+    wall: true,
+    note: 'פאס, סיינה, עכו: הרקמה נבנית מהחלקה אל הרחוב.',
+  },
+  {
+    id: 'grid',
+    name: 'רשת',
+    short: 'בלוק היקפי ברשת מוטלת',
+    lynch: 'machine',
+    T: ['רחוב ישר', 'בלוק היקפי', 'חצר פנימית'],
+    R: ['המבנה מגדיר את הרחוב', 'חלוקה שוויונית'],
+    P: ['רשת מוטלת מלמעלה'],
+    bounds: { O: [0.5, 1], H: [0, 0.75], G: [25, 400] },
+    floorsMax: 12,
+    depth: [6, 35],
+    wall: true,
+    note: 'מילטוס, מנהטן, ברצלונה: איזוטרופיה, כל בלוק שווה לשכנו.',
+  },
+  {
+    id: 'cosmic',
+    name: 'קוסמי',
+    short: 'ציר, מרכז וחומה',
+    lynch: 'cosmic',
+    T: ['ציר תהלוכה', 'מרכז קדוש', 'חומה', 'רובע סגור'],
+    R: ['המבנה מגדיר את הרחוב', 'הכול מכוון אל המרכז'],
+    P: ['הטלה מלמעלה לפי כיווני עולם'],
+    bounds: { O: [0.4, 1], H: [0.5, 1], G: [40, 1000] },
+    floorsMax: 4,
+    depth: [6, 999],
+    wall: true,
+    note: 'צ\'אנג-אן, הייאן-קיו, טאוטיהואקאן: העיר כדיאגרמה של סדר עולם.',
+  },
+  {
+    id: 'ideal',
+    name: 'עיר אידיאלית',
+    short: 'רדיאלית וקונצנטרית',
+    lynch: 'cosmic',
+    T: ['כיכר מרכזית', 'רחוב רדיאלי', 'טבעת', 'ביצור מצולע'],
+    R: ['המבנה מגדיר את הרחוב', 'הגיאומטריה היא התוכן'],
+    P: ['מצולע רדיאלי מסביב למרכז'],
+    bounds: { O: [0.6, 1], H: [0.7, 1], G: [40, 500] },
+    floorsMax: 6,
+    depth: [4, 40],
+    wall: true,
+    note: 'פלמנובה, נהלל: מרכז אחד, קרניים וטבעות.',
+  },
+  {
+    id: 'grand',
+    name: 'הסגנון הגדול',
+    short: 'צירים בארוקיים חותכים',
+    lynch: 'cosmic',
+    T: ['שדרה אלכסונית', 'מוקד מונומנטלי', 'בלוק היקפי'],
+    R: ['המבנה מגדיר את הרחוב', 'הציר גובר על הרקמה'],
+    P: ['חיתוך צירים דרך רקמה קיימת'],
+    bounds: { O: [0.2, 0.7], H: [0.6, 1], G: [40, 200] },
+    floorsMax: 7,
+    depth: [6, 999],
+    wall: true,
+    note: 'רומא של סיקסטוס החמישי, פריז של האוסמן: הציר הופך לכלל יוצר.',
+  },
+  {
+    id: 'garden',
+    name: 'עיר גנים',
+    short: 'בית בגן וחגורה ירוקה',
+    lynch: 'organic',
+    T: ['בית נפרד', 'גינה קדמית', 'חגורה ירוקה', 'יחידת שכונה'],
+    R: ['המבנה נסוג מהרחוב'],
+    P: ['תכנון מלמעלה בצפיפות נמוכה'],
+    bounds: { O: [0.2, 0.85], H: [0.3, 0.8], G: [60, 400], E: [0.03, 0.45] },
+    floorsMax: 4,
+    depth: null,
+    pavilion: { side: [8, 22], gap: 6 },
+    wall: false,
+    note: 'לצ\'וורת\', תוכנית גדס: הבית חוזר לגן, הרחוב מאבד דופן.',
+  },
+  {
+    id: 'tower',
+    name: 'מגדל בפארק',
+    short: 'בלוק-על ומגדל חופשי',
+    lynch: 'machine',
+    T: ['בלוק-על', 'מגדל', 'עורק תנועה', 'פארק רציף'],
+    R: ['המבנה מנותק מהרחוב', 'הפרדת שימושים'],
+    P: ['פריסה פונקציונלית לפי שמש ותנועה'],
+    bounds: { O: [0.5, 1], H: [0.05, 0.9], G: [150, 2000], E: [0.02, 0.3] },
+    floorsMax: 60,
+    depth: null,
+    pavilion: { side: [16, 50], gap: 30 },
+    wall: false,
+    note: 'העיר הקורנת, ברזיליה, אשדוד המוקדמת: רחוב-המסדרון נמחק.',
+  },
+  {
+    id: 'field',
+    name: 'שדה פרמטרי',
+    short: 'רציפות במקום אלמנטים',
+    lynch: 'algorithmic',
+    T: ['זרם רציף', 'מסה משתנה בהדרגה'],
+    R: ['כל ערך נגזר משכנו'],
+    P: ['אלגוריתם על שדה רציף'],
+    bounds: { O: [0, 0.35], H: [0.3, 0.8], G: [40, 300] },
+    floorsMax: 40,
+    depth: [6, 30],
+    wall: true,
+    note: 'אין בקורפוס מקרה עירוני שנבנה. מרכז היידר אלייב הוא קנה מבנה.',
+  },
+];
+
+export const CODE: Record<CodeId, Code> = Object.fromEntries(CODES.map((c) => [c.id, c])) as Record<CodeId, Code>;
+
+export const LYNCH: Record<Lynch, { name: string; color: string; note: string }> = {
+  cosmic: { name: 'קוסמי', color: 'var(--cosmic)', note: 'העיר כמודל של סדר עולם' },
+  machine: { name: 'מכונה', color: 'var(--machine)', note: 'העיר כמערכת חלקים שווים' },
+  organic: { name: 'אורגני', color: 'var(--organic)', note: 'העיר כאורגניזם שגדל' },
+  algorithmic: { name: 'אלגוריתמי', color: 'var(--algo)', note: 'מחוץ לשלישייה של לינץ\'' },
+};
+
+export const codeColor = (id: CodeId) => LYNCH[CODE[id].lynch].color;
+
+/** marker shape distinguishes codes that share a Lynch colour */
+export const CODE_MARK: Record<CodeId, 'circle' | 'square' | 'diamond' | 'triangle'> = {
+  organic: 'circle',
+  garden: 'diamond',
+  grid: 'square',
+  tower: 'triangle',
+  cosmic: 'square',
+  ideal: 'circle',
+  grand: 'diamond',
+  field: 'circle',
+};
