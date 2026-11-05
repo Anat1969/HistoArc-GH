@@ -13,7 +13,7 @@ const City3D = lazy(() => import('../components/City3D'));
 
 export const PARAM_META: Record<Param, { he: string; unit: string; min: number; max: number; log?: boolean; step: number; std: string }> = {
   O: { he: 'סדר', unit: 'φ', min: 0, max: 1, step: 0.01, std: 'Boeing 2019' },
-  I: { he: 'עוצמה', unit: 'FSI', min: 0.02, max: 8, log: true, step: 0.01, std: 'Spacematrix' },
+  I: { he: 'עוצמה', unit: 'FSI', min: 0.02, max: 16, log: true, step: 0.01, std: 'Spacematrix' },
   E: { he: 'סגירות', unit: 'GSI', min: 0, max: 1, step: 0.01, std: 'Spacematrix' },
   H: { he: 'היררכיה', unit: '0–1', min: 0, max: 1, step: 0.01, std: 'מורכב [ה]' },
   G: { he: 'גרעין', unit: "מ'", min: 15, max: 2000, log: true, step: 0.001, std: 'Conzen' },
@@ -217,7 +217,7 @@ export default function Lab({ q }: { q: URLSearchParams }) {
           <div className="lens" style={{ margin: 0 }}>
             <div className="kicker">
               {cs ? `${cs.he} · ${cs.orig} · ${cs.period}` : 'ערכים חופשיים'} · קוד {C.name}
-              {cs && (cs.assessed ? ` · θ נמדד מ-OpenStreetMap ${cs.measuredYear ?? ''}` : ' · θ הערכה [ה]')}
+              {cs && (cs.assessed ? ` · θ נמדד מ-OpenStreetMap ${cs.measuredYear ?? ''}` : cs.measureNote ? ` · ${cs.measureNote}` : ' · θ הערכה [ה]')}
             </div>
             <h1>{ok && !wallMismatch ? headline : <span>{headline}</span>}</h1>
             <p>{sub}</p>

@@ -3,11 +3,13 @@
 import { CITY_CASES } from '../src/data/cases';
 import { fitOf } from '../src/lib/verdict';
 let bad = 0;
+let anomalies = 0;
 for (const c of CITY_CASES) {
   const f = fitOf(c, c.code);
   const allowed = c.wallOverride !== undefined && f === 'numbers';
   if (f !== 'full' && c.assessed) {
     // measured cities may fall outside their code: that is a finding, not a build error
+    anomalies++;
     console.log(`ANOMALY after calibration: case ${c.id} (${c.orig}) in its own code ${c.code}: ${f}`);
     continue;
   }
@@ -17,4 +19,4 @@ for (const c of CITY_CASES) {
   }
 }
 if (bad) process.exit(1);
-console.log(`check: ${CITY_CASES.length} city cases reproduced by their own code`);
+console.log(`check: ${CITY_CASES.length - anomalies} of ${CITY_CASES.length} city cases reproduced by their own code; ${anomalies} measured anomalies`);

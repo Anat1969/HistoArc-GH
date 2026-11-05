@@ -15,6 +15,7 @@ export interface Case {
   theta: Theta | null; // null for building-scale cases in this version
   assessed?: Theta; // the spec's assessment, kept when a measured value replaces it
   measuredYear?: number;
+  measureNote?: string;
   wallOverride?: boolean; // documented street wall when it differs from the primary code [ה]
   tOverride?: Partial<{ center: boolean; deadEnd: boolean; court: boolean }>;
   gNote?: string;
@@ -84,6 +85,11 @@ const MEASURED = measuredJson as Record<string, MeasuredRow>;
 for (const c of CASES) {
   const m = MEASURED[String(c.id)];
   if (!c.theta || !m || m.error || m.O === undefined) continue;
+  // incomplete building data: OSM maps less than half the assessed coverage, keep the assessment
+  if (m.E !== undefined && m.E < 0.5 * c.theta.E) {
+    c.measureNote = `נתוני מבנים חסרים ב-OpenStreetMap (GSI נמדד ${m.E}). נשארה ההערכה.`;
+    continue;
+  }
   c.assessed = { ...c.theta };
   c.theta = { ...c.theta, O: m.O, I: m.I ?? c.theta.I, E: m.E ?? c.theta.E, G: m.G ?? c.theta.G };
   c.measuredYear = m.state_year;
