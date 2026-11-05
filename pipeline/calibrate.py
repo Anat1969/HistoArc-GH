@@ -1,32 +1,35 @@
 """
 Calibration pipeline for קוד העיר: replaces the assessed θ of real cities with measured values.
 
-Runs on GitHub's servers (Actions tab, workflow "כיול מ-OpenStreetMap"), which can reach Overpass:
+Source: Overture Maps (open data derived largely from OpenStreetMap, hosted on public cloud storage,
+no rate limit). The public Overpass servers refused automated requests from GitHub's runners,
+so this version does not use Overpass at all.
+
+Runs on GitHub's servers (Actions tab, workflow "כיול מ-OpenStreetMap"):
     pip install -r pipeline/requirements.txt
     python pipeline/calibrate.py src/data/measured.json
 
-Measures, per city, inside a 700 m square around the centre point (the app's plate size):
-    O  Boeing (2019) orientation order φ, 36 bins, via osmnx.bearing
-    E  GSI  = Σ footprint / area                         (Spacematrix 2010)
-    I  FSI  = Σ footprint × floors / area, floors from building:levels, else height / 3.3, else 2 [ה]
-    G  √(area / number of street blocks)
-    wall  share of street length with a building within 3 m (relation R)
+Measures, per city, inside a 700 m square around the centre point (the app's plate size),
+with the same definitions the generator uses:
+    O     Boeing (2019) orientation order φ: 36 bins of 10°, both directions, weighted by length
+    E     GSI  = Σ footprint / area                                  (Spacematrix 2010)
+    I     FSI  = Σ footprint × floors / area; floors = num_floors, else height / 3.3, else 2 [נ]
+    G     √(area / number of street blocks), blocks = polygons enclosed by road segments
+    wall  share of road length within 6 m of a building (relation R)
 H is not computed here: use depthmapX integration variance and report the radius.
-Each value is written with method, source, state year and confidence, per spec section 5.
+The file is written after every city, so a stopped run keeps what it measured.
 """
+import datetime
 import json
 import math
+import sys
 
-import geopandas as gpd
-import osmnx as ox
-
-import time
+import shapely
+from overturemaps import core
+from shapely.ops import polygonize, unary_union
 
 HALF = 350  # metres
-# the public Overpass servers are often at capacity: rotate between them and back off
-ENDPOINTS = ["https://overpass-api.de/api", "https://overpass.private.coffee/api", "https://overpass.kumi.systems/api"]
-ox.settings.requests_timeout = 300
-ox.settings.use_cache = True
+RELEASE = None  # latest Overture release
 
 CITIES = {  # case id: (name, lat, lon), the ten cities of spec section 11.1
     19: ("Eixample, Barcelona", 41.3917, 2.1649),
@@ -42,74 +45,101 @@ CITIES = {  # case id: (name, lat, lon), the ten cities of spec section 11.1
 }
 
 
-def phi(G):
-    Gu = ox.convert.to_undirected(ox.bearing.add_edge_bearings(G))
-    H0 = ox.bearing.orientation_entropy(Gu, num_bins=36)
+def to_local(lat0, lon0):
+    """equirectangular projection to metres around the centre: error < 0.1% over 700 m"""
+    kx = 111320.0 * math.cos(math.radians(lat0))
+    ky = 110540.0
+    return lambda g: shapely.transform(g, lambda c: (c - [lon0, lat0]) * [kx, ky])
+
+
+def fetch(kind, lat, lon):
+    dlat = (HALF * 1.2) / 110540.0
+    dlon = (HALF * 1.2) / (111320.0 * math.cos(math.radians(lat)))
+    reader = core.record_batch_reader(kind, (lon - dlon, lat - dlat, lon + dlon, lat + dlat), release=RELEASE)
+    rows = []
+    for batch in reader:
+        rows.extend(batch.to_pylist())
+    return rows
+
+
+def phi(lines):
+    bins = [0.0] * 36
+    for ln in lines:
+        c = list(ln.coords)
+        for (x1, y1), (x2, y2) in zip(c, c[1:]):
+            L = math.hypot(x2 - x1, y2 - y1)
+            if L < 1e-6:
+                continue
+            deg = math.degrees(math.atan2(x2 - x1, y2 - y1))
+            for d in (deg, deg + 180):
+                bins[int((((d + 5) % 360) + 360) % 360 // 10) % 36] += L
+    tot = sum(bins)
+    H0 = -sum(b / tot * math.log(b / tot) for b in bins if b > 0)
     Hg, Hmax = math.log(4), math.log(36)
-    return max(0.0, 1 - ((H0 - Hg) / (Hmax - Hg)) ** 2) if H0 > Hg else 1.0
+    return 1.0 if H0 <= Hg else max(0.0, 1 - ((H0 - Hg) / (Hmax - Hg)) ** 2)
 
 
 def floors(row):
-    lv = row.get("building:levels")
-    try:
-        return max(1.0, float(lv))
-    except (TypeError, ValueError):
-        pass
-    try:
-        return max(1.0, float(str(row.get("height")).split()[0]) / 3.3)
-    except (TypeError, ValueError):
-        return 2.0  # assumption [נ]
+    if row.get("num_floors"):
+        return max(1.0, float(row["num_floors"]))
+    if row.get("height"):
+        return max(1.0, float(row["height"]) / 3.3)
+    return 2.0  # assumption [נ]
 
 
 def measure(lat, lon):
-    G = ox.graph_from_point((lat, lon), dist=HALF, dist_type="bbox", network_type="all", simplify=True)
-    Gp = ox.project_graph(G)
-    b = ox.features_from_point((lat, lon), tags={"building": True}, dist=HALF)
-    b = b[b.geometry.type.isin(["Polygon", "MultiPolygon"])].to_crs(Gp.graph["crs"])
-    nodes, edges = ox.graph_to_gdfs(Gp)
-    c = nodes.union_all().centroid
-    box = gpd.GeoSeries([c.buffer(HALF, cap_style=3)], crs=Gp.graph["crs"])
-    area = float(box.area.iloc[0])
-    b = gpd.clip(b, box)
-    fp = b.geometry.area
-    fl = b.apply(floors, axis=1)
-    blocks = box.iloc[0].difference(edges.buffer(4).union_all())
-    n_blocks = len(getattr(blocks, "geoms", [blocks]))
-    edges = gpd.clip(edges, box)
-    near = edges.geometry.length.sum()
-    # street length that runs within 6 m of a building face: the street wall (relation R)
-    lined = edges.geometry.intersection(b.buffer(6).union_all()).length.sum() if len(b) else 0.0
+    proj = to_local(lat, lon)
+    box = shapely.box(-HALF, -HALF, HALF, HALF)
+    area = box.area
+
+    roads = []
+    for r in fetch("segment", lat, lon):
+        if r.get("subtype") != "road":
+            continue
+        g = proj(shapely.from_wkb(r["geometry"])).intersection(box)
+        if not g.is_empty:
+            roads.extend(getattr(g, "geoms", [g]))
+    roads = [g for g in roads if g.geom_type == "LineString"]
+
+    fp = 0.0
+    fa = 0.0
+    shapes = []
+    for b in fetch("building", lat, lon):
+        g = proj(shapely.from_wkb(b["geometry"])).intersection(box)
+        if g.is_empty or g.area <= 0:
+            continue
+        shapes.append(g)
+        fp += g.area
+        fa += g.area * floors(b)
+
+    noded = unary_union(roads + [box.boundary])
+    blocks = [p for p in polygonize(noded) if p.area > 200]
+    length = sum(g.length for g in roads)
+    lined = sum(g.intersection(unary_union(shapes).buffer(6)).length for g in roads) if shapes else 0.0
     return {
-        "O": round(phi(G), 3),  # bearings need the unprojected graph
-        "E": round(float(fp.sum() / area), 3),
-        "I": round(float((fp * fl).sum() / area), 3),
-        "G": round(math.sqrt(area / max(n_blocks, 1)), 1),
-        "wall": round(min(1.0, float(lined / near)) if near else 0.0, 2),
-        "method": "osmnx_phi+spacematrix",
-        "source": "OpenStreetMap (ODbL)",
+        "O": round(phi(roads), 3),
+        "E": round(fp / area, 3),
+        "I": round(fa / area, 3),
+        "G": round(math.sqrt(area / max(len(blocks), 1)), 1),
+        "wall": round(min(1.0, lined / length), 2) if length else 0.0,
+        "roads": len(roads),
+        "buildings": len(shapes),
+        "method": "boeing_phi+spacematrix",
+        "source": "Overture Maps (OpenStreetMap-derived, ODbL)",
         "confidence": 0.6,
     }
 
 
 if __name__ == "__main__":
-    import datetime
-    import sys
-
+    path = sys.argv[1] if len(sys.argv) > 1 else None
     out = {}
     for cid, (name, lat, lon) in CITIES.items():
-        last = None
-        for attempt in range(6):
-            ox.settings.overpass_url = ENDPOINTS[attempt % len(ENDPOINTS)]
-            try:
-                out[cid] = {"name": name, "state_year": datetime.date.today().year, "endpoint": ox.settings.overpass_url, **measure(lat, lon)}
-                break
-            except Exception as e:  # retry, then report the gap
-                last = str(e).splitlines()[0][:200]
-                time.sleep(min(240, 15 * 2**attempt))
-        else:
-            out[cid] = {"name": name, "error": last}
+        try:
+            out[cid] = {"name": name, "state_year": datetime.date.today().year, **measure(lat, lon)}
+        except Exception as e:  # keep going, report the gap
+            out[cid] = {"name": name, "error": str(e).splitlines()[0][:200]}
         print(name, "ok" if "error" not in out[cid] else out[cid]["error"], file=sys.stderr, flush=True)
-    text = json.dumps(out, ensure_ascii=False, indent=2)
-    if len(sys.argv) > 1:
-        open(sys.argv[1], "w", encoding="utf-8").write(text + "\n")
-    print(text)
+        if path:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(json.dumps(out, ensure_ascii=False, indent=2) + "\n")
+    print(json.dumps(out, ensure_ascii=False, indent=2))

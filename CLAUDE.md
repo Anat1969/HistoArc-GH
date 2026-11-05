@@ -27,7 +27,7 @@
 - `src/data/cases.ts`: 35 המקרים, 11 המעברים. `src/data/matrix.json` נוצר בכל build.
 - `scripts/matrix.ts`: מחשב 288 הרצות (32 ערים × 9 קודים). `scripts/check.ts`: שער עקביות, כל עיר חייבת להשתחזר בקוד שלה.
 - `src/lib/verdict.ts`: כלל ההכרעה (שגיאה עד 0.05, דופן רחוב תואמת, ואותם אלמנטים T) וסיווג המעברים.
-- `pipeline/calibrate.py`: כיול θ מ-OpenStreetMap לעשרה מקרים. רץ מחוץ לסביבת הבנייה (Overpass חסום בה).
+- `pipeline/calibrate.py`: כיול θ לעשרה מקרים מ-Overture Maps (נגזר מ-OpenStreetMap). רץ ב-GitHub Actions, מופעל בדחיפה ל-`pipeline/`. Overpass הציבורי חוסם את שרתי GitHub.
 - אין Supabase: אין מידע משתמש לשמור. הנתונים סטטיים בקוד.
 
 ## החלטות שכדאי לזכור
