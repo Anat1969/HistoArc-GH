@@ -3,6 +3,9 @@ name: כיול מ-OpenStreetMap
 # Runs the calibration pipeline on GitHub's servers and commits measured θ to main.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['pipeline/**']
 
 permissions:
   contents: write
