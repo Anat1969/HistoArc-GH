@@ -20,7 +20,13 @@ import math
 import geopandas as gpd
 import osmnx as ox
 
+import time
+
 HALF = 350  # metres
+# the public Overpass servers are often at capacity: rotate between them and back off
+ENDPOINTS = ["https://overpass-api.de/api", "https://overpass.private.coffee/api", "https://overpass.kumi.systems/api"]
+ox.settings.requests_timeout = 300
+ox.settings.use_cache = True
 
 CITIES = {  # case id: (name, lat, lon), the ten cities of spec section 11.1
     19: ("Eixample, Barcelona", 41.3917, 2.1649),
@@ -74,7 +80,7 @@ def measure(lat, lon):
     # street length that runs within 6 m of a building face: the street wall (relation R)
     lined = edges.geometry.intersection(b.buffer(6).union_all()).length.sum() if len(b) else 0.0
     return {
-        "O": round(phi(Gp), 3),
+        "O": round(phi(G), 3),  # bearings need the unprojected graph
         "E": round(float(fp.sum() / area), 3),
         "I": round(float((fp * fl).sum() / area), 3),
         "G": round(math.sqrt(area / max(n_blocks, 1)), 1),
@@ -91,10 +97,18 @@ if __name__ == "__main__":
 
     out = {}
     for cid, (name, lat, lon) in CITIES.items():
-        try:
-            out[cid] = {"name": name, "state_year": datetime.date.today().year, **measure(lat, lon)}
-        except Exception as e:  # keep going, report the gap
-            out[cid] = {"name": name, "error": str(e)}
+        last = None
+        for attempt in range(6):
+            ox.settings.overpass_url = ENDPOINTS[attempt % len(ENDPOINTS)]
+            try:
+                out[cid] = {"name": name, "state_year": datetime.date.today().year, "endpoint": ox.settings.overpass_url, **measure(lat, lon)}
+                break
+            except Exception as e:  # retry, then report the gap
+                last = str(e).splitlines()[0][:200]
+                time.sleep(min(240, 15 * 2**attempt))
+        else:
+            out[cid] = {"name": name, "error": last}
+        print(name, "ok" if "error" not in out[cid] else out[cid]["error"], file=sys.stderr, flush=True)
     text = json.dumps(out, ensure_ascii=False, indent=2)
     if len(sys.argv) > 1:
         open(sys.argv[1], "w", encoding="utf-8").write(text + "\n")
