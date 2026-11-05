@@ -1,5 +1,6 @@
 import type { CodeId, Theta } from '../engine/types';
 import { CODE, CODE_T } from '../engine/codes';
+import measuredJson from './measured.json';
 
 export interface Case {
   id: number;
@@ -12,6 +13,8 @@ export interface Case {
   code: CodeId; // primary code [ה]
   hybrid?: CodeId; // second code for hybrids [ה]
   theta: Theta | null; // null for building-scale cases in this version
+  assessed?: Theta; // the spec's assessment, kept when a measured value replaces it
+  measuredYear?: number;
   wallOverride?: boolean; // documented street wall when it differs from the primary code [ה]
   tOverride?: Partial<{ center: boolean; deadEnd: boolean; court: boolean }>;
   gNote?: string;
@@ -63,6 +66,28 @@ export const CASES: Case[] = [
   { id: 34, he: 'מרכז היידר אלייב, באקו', orig: 'Heydar Aliyev Center, Bakı', period: '2007–2012', year: 2007, paradigm: 'פרמטריציזם (קנה מבנה)', scale: 'building', code: 'field', theta: null, commons: C + 'Heydar_Aliyev_Center', status: 'built' },
   { id: 35, he: 'אשדוד, טבעות והמע"ר הימי', orig: 'Ashdod', period: 'שנות ה-2020', year: 2022, paradigm: 'עירוניות מחודשת', scale: 'city', code: 'grid', hybrid: 'tower', theta: { O: 0.5, I: 2.5, E: 0.35, H: 0.7, G: 120 }, commons: '', status: 'living' },
 ];
+
+/**
+ * Calibration overlay: values measured from OpenStreetMap by pipeline/calibrate.py (GitHub Actions)
+ * replace the assessed O, I, E, G. H stays an assessment until depthmapX is run.
+ */
+interface MeasuredRow {
+  O?: number;
+  I?: number;
+  E?: number;
+  G?: number;
+  wall?: number;
+  error?: string;
+  state_year?: number;
+}
+const MEASURED = measuredJson as Record<string, MeasuredRow>;
+for (const c of CASES) {
+  const m = MEASURED[String(c.id)];
+  if (!c.theta || !m || m.error || m.O === undefined) continue;
+  c.assessed = { ...c.theta };
+  c.theta = { ...c.theta, O: m.O, I: m.I ?? c.theta.I, E: m.E ?? c.theta.E, G: m.G ?? c.theta.G };
+  c.measuredYear = m.state_year;
+}
 
 export const CITY_CASES = CASES.filter((c) => c.theta);
 

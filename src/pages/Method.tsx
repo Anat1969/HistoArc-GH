@@ -1,4 +1,5 @@
 import { CODES } from '../engine/codes';
+import { CITY_CASES } from '../data/cases';
 import { FIT_THRESHOLD } from '../engine/measure';
 import { CodeMark } from '../components/Marks';
 
@@ -148,7 +149,7 @@ export default function Method() {
           <p className="small" style={{ margin: 0 }}>
             <span className="tag">[ע]</span> עובדה ביבליוגרפית. <span className="tag">[ה]</span> הערכה. <span className="tag">[נ]</span> הנחה.
             <br />
-            כל ערכי θ של 35 המקרים הם הערכות ראשוניות מהאפיון, לכיול בצנרת OSMnx, momepy ו-depthmapX. מקרים שלא שרדו (בבל, צ'אנג-אן) נשענים על שחזורים שנויים במחלוקת.
+            {CITY_CASES.filter((c) => c.assessed).length ? <>ערכי θ של <b>{CITY_CASES.filter((c) => c.assessed).length}</b> ערים נמדדו מ-OpenStreetMap (O, I, E, G). השאר </> : <>כל ערכי θ </>}הם הערכות ראשוניות מהאפיון. הכיול רץ בשרתי GitHub (pipeline/calibrate.py). H נשאר הערכה עד הרצת depthmapX. מקרים שלא שרדו (בבל, צ'אנג-אן) נשענים על שחזורים שנויים במחלוקת.
           </p>
           <div className="hr" />
           <h2>מקורות</h2>

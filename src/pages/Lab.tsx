@@ -217,6 +217,7 @@ export default function Lab({ q }: { q: URLSearchParams }) {
           <div className="lens" style={{ margin: 0 }}>
             <div className="kicker">
               {cs ? `${cs.he} · ${cs.orig} · ${cs.period}` : 'ערכים חופשיים'} · קוד {C.name}
+              {cs && (cs.assessed ? ` · θ נמדד מ-OpenStreetMap ${cs.measuredYear ?? ''}` : ' · θ הערכה [ה]')}
             </div>
             <h1>{ok && !wallMismatch ? headline : <span>{headline}</span>}</h1>
             <p>{sub}</p>

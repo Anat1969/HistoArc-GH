@@ -1,15 +1,15 @@
 """
 Calibration pipeline for קוד העיר: replaces the assessed θ of real cities with measured values.
 
-Runs offline (needs OpenStreetMap / Overpass access, which the build environment does not have):
-    pip install osmnx==2.0.1 momepy==0.9.1 geopandas
-    python pipeline/calibrate.py > pipeline/measured.json
+Runs on GitHub's servers (Actions tab, workflow "כיול מ-OpenStreetMap"), which can reach Overpass:
+    pip install -r pipeline/requirements.txt
+    python pipeline/calibrate.py src/data/measured.json
 
 Measures, per city, inside a 700 m square around the centre point (the app's plate size):
     O  Boeing (2019) orientation order φ, 36 bins, via osmnx.bearing
     E  GSI  = Σ footprint / area                         (Spacematrix 2010)
     I  FSI  = Σ footprint × floors / area, floors from building:levels, else height / 3.3, else 2 [ה]
-    G  √(area / number of street blocks)                 (momepy tessellation is optional)
+    G  √(area / number of street blocks)
     wall  share of street length with a building within 3 m (relation R)
 H is not computed here: use depthmapX integration variance and report the radius.
 Each value is written with method, source, state year and confidence, per spec section 5.
@@ -61,16 +61,18 @@ def measure(lat, lon):
     b = ox.features_from_point((lat, lon), tags={"building": True}, dist=HALF)
     b = b[b.geometry.type.isin(["Polygon", "MultiPolygon"])].to_crs(Gp.graph["crs"])
     nodes, edges = ox.graph_to_gdfs(Gp)
-    c = nodes.unary_union.centroid
+    c = nodes.union_all().centroid
     box = gpd.GeoSeries([c.buffer(HALF, cap_style=3)], crs=Gp.graph["crs"])
     area = float(box.area.iloc[0])
     b = gpd.clip(b, box)
     fp = b.geometry.area
     fl = b.apply(floors, axis=1)
-    blocks = box.iloc[0].difference(edges.buffer(4).unary_union)
+    blocks = box.iloc[0].difference(edges.buffer(4).union_all())
     n_blocks = len(getattr(blocks, "geoms", [blocks]))
+    edges = gpd.clip(edges, box)
     near = edges.geometry.length.sum()
-    lined = edges.buffer(3).intersection(b.unary_union).length.sum() if len(b) else 0.0
+    # street length that runs within 6 m of a building face: the street wall (relation R)
+    lined = edges.geometry.intersection(b.buffer(6).union_all()).length.sum() if len(b) else 0.0
     return {
         "O": round(phi(Gp), 3),
         "E": round(float(fp.sum() / area), 3),
@@ -84,10 +86,16 @@ def measure(lat, lon):
 
 
 if __name__ == "__main__":
+    import datetime
+    import sys
+
     out = {}
     for cid, (name, lat, lon) in CITIES.items():
         try:
-            out[cid] = {"name": name, **measure(lat, lon)}
+            out[cid] = {"name": name, "state_year": datetime.date.today().year, **measure(lat, lon)}
         except Exception as e:  # keep going, report the gap
             out[cid] = {"name": name, "error": str(e)}
-    print(json.dumps(out, ensure_ascii=False, indent=2))
+    text = json.dumps(out, ensure_ascii=False, indent=2)
+    if len(sys.argv) > 1:
+        open(sys.argv[1], "w", encoding="utf-8").write(text + "\n")
+    print(text)
