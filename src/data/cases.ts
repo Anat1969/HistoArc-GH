@@ -77,6 +77,7 @@ interface MeasuredRow {
   I?: number;
   E?: number;
   G?: number;
+  G_art?: number;
   wall?: number;
   error?: string;
   state_year?: number;
@@ -91,7 +92,9 @@ for (const c of CASES) {
     continue;
   }
   c.assessed = { ...c.theta };
-  c.theta = { ...c.theta, O: m.O, I: m.I ?? c.theta.I, E: m.E ?? c.theta.E, G: m.G ?? c.theta.G };
+  // superblock codes are defined by their arterial mesh: their grain is measured on arterials only [ה]
+  const G = CODE[c.code].id === 'tower' && m.G_art ? m.G_art : (m.G ?? c.theta.G);
+  c.theta = { ...c.theta, O: m.O, I: m.I ?? c.theta.I, E: m.E ?? c.theta.E, G };
   c.measuredYear = m.state_year;
 }
 

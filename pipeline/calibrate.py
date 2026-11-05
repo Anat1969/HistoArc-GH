@@ -15,6 +15,7 @@ with the same definitions the generator uses:
     E     GSI  = Σ footprint / area                                  (Spacematrix 2010)
     I     FSI  = Σ footprint × floors / area; floors = num_floors, else height / 3.3, else 2 [נ]
     G     √(area / number of street blocks), blocks = polygons enclosed by road segments
+    G_art the same on arterials only (primary..tertiary): the superblock grain of the tower code
     wall  share of road length within 6 m of a building (relation R)
 H is not computed here: use depthmapX integration variance and report the radius.
 The file is written after every city, so a stopped run keeps what it measured.
@@ -30,6 +31,7 @@ from shapely.ops import polygonize, unary_union
 
 HALF = 350  # metres
 # streets that form blocks, as in Boeing's drive network, with a typical half width (m) to the facade [ה]
+ARTERIAL = {"motorway", "trunk", "primary", "secondary", "tertiary"}
 HALF_WIDTH = {
     "motorway": 15, "trunk": 14, "primary": 12, "secondary": 10, "tertiary": 9,
     "residential": 7, "unclassified": 6, "living_street": 5, "pedestrian": 4,
@@ -38,7 +40,7 @@ RELEASE = None  # latest Overture release
 
 CITIES = {  # case id: (name, lat, lon), the ten cities of spec section 11.1
     19: ("Eixample, Barcelona", 41.3917, 2.1649),
-    18: ("Paris", 48.8738, 2.2950),
+    18: ("Paris, Opéra (Haussmann fabric)", 48.8720, 2.3316),  # was Étoile, a radial exception
     8: ("Fès el-Bali", 34.0644, -4.9733),
     22: ("Tel Aviv", 32.0771, 34.7746),
     27: ("Ashdod", 31.7918, 34.6497),
@@ -99,6 +101,7 @@ def measure(lat, lon):
 
     roads = []
     widths = []
+    arterials = []
     for r in fetch("segment", lat, lon):
         if r.get("subtype") != "road" or r.get("class") not in HALF_WIDTH:
             continue  # footways, sidewalks, service roads and paths do not form blocks
@@ -107,6 +110,8 @@ def measure(lat, lon):
             if part.geom_type == "LineString" and not part.is_empty:
                 roads.append(part)
                 widths.append(HALF_WIDTH[r["class"]])
+                if r["class"] in ARTERIAL:
+                    arterials.append(part)
 
     fp = 0.0
     fa = 0.0
@@ -121,6 +126,7 @@ def measure(lat, lon):
 
     noded = unary_union(roads + [box.boundary])
     blocks = [p for p in polygonize(noded) if p.area > 200]
+    super_blocks = [p for p in polygonize(unary_union(arterials + [box.boundary])) if p.area > 200]
     length = sum(g.length for g in roads)
     # street wall: the stretch of street whose facade line (half width + 4 m) meets a building
     built = unary_union(shapes) if shapes else None
@@ -131,6 +137,7 @@ def measure(lat, lon):
         "E": round(fp / area, 3),
         "I": round(fa / area, 3),
         "G": round(math.sqrt(area / max(len(blocks), 1)), 1),
+        "G_art": round(math.sqrt(area / max(len(super_blocks), 1)), 1),
         "wall": round(min(1.0, lined / length), 2) if length else 0.0,
         "roads": len(roads),
         "buildings": len(shapes),
