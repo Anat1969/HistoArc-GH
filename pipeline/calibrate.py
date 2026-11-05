@@ -29,6 +29,11 @@ from overturemaps import core
 from shapely.ops import polygonize, unary_union
 
 HALF = 350  # metres
+# streets that form blocks, as in Boeing's drive network, with a typical half width (m) to the facade [ה]
+HALF_WIDTH = {
+    "motorway": 15, "trunk": 14, "primary": 12, "secondary": 10, "tertiary": 9,
+    "residential": 7, "unclassified": 6, "living_street": 5, "pedestrian": 4,
+}
 RELEASE = None  # latest Overture release
 
 CITIES = {  # case id: (name, lat, lon), the ten cities of spec section 11.1
@@ -93,13 +98,15 @@ def measure(lat, lon):
     area = box.area
 
     roads = []
+    widths = []
     for r in fetch("segment", lat, lon):
-        if r.get("subtype") != "road":
-            continue
+        if r.get("subtype") != "road" or r.get("class") not in HALF_WIDTH:
+            continue  # footways, sidewalks, service roads and paths do not form blocks
         g = proj(shapely.from_wkb(r["geometry"])).intersection(box)
-        if not g.is_empty:
-            roads.extend(getattr(g, "geoms", [g]))
-    roads = [g for g in roads if g.geom_type == "LineString"]
+        for part in getattr(g, "geoms", [g]):
+            if part.geom_type == "LineString" and not part.is_empty:
+                roads.append(part)
+                widths.append(HALF_WIDTH[r["class"]])
 
     fp = 0.0
     fa = 0.0
@@ -115,7 +122,10 @@ def measure(lat, lon):
     noded = unary_union(roads + [box.boundary])
     blocks = [p for p in polygonize(noded) if p.area > 200]
     length = sum(g.length for g in roads)
-    lined = sum(g.intersection(unary_union(shapes).buffer(6)).length for g in roads) if shapes else 0.0
+    # street wall: the stretch of street whose facade line (half width + 4 m) meets a building
+    built = unary_union(shapes) if shapes else None
+    zones = {w: built.buffer(w + 4) for w in set(widths)} if built else {}
+    lined = sum(g.intersection(zones[w]).length for g, w in zip(roads, widths)) if built else 0.0
     return {
         "O": round(phi(roads), 3),
         "E": round(fp / area, 3),
