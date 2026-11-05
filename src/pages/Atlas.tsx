@@ -194,7 +194,7 @@ export default function Atlas() {
             <b>אותה נקודה, ערים שונות.</b> הקוד האורגני משחזר את המספרים של לצ'וורת' בשגיאה <span className="mono">{cell(20, 'organic').e.toFixed(3)}</span>, אבל עם דופן רחוב רציפה. רק היחס R מבדיל ביניהן.
           </p>
           <div className="legend">
-            {(['organic', 'grid', 'cosmic', 'ideal', 'grand', 'garden', 'tower', 'field'] as const).map((id) => (
+            {(['organic', 'medina', 'grid', 'cosmic', 'ideal', 'grand', 'garden', 'tower', 'field'] as const).map((id) => (
               <span key={id} className="chip">
                 <CodeMark code={id} />
                 {CODE[id].name}

@@ -14,7 +14,7 @@ for (const c of CITY_CASES) {
     out[`${c.id}:${code.id}`] = {
       e: r(m.error),
       p: Object.fromEntries(Object.entries(m.errors).map(([k, v]) => [k, r(v)])),
-      m: { O: r(m.measured.O), I: r(m.measured.I), E: r(m.measured.E), H: r(m.measured.H), G: r(m.measured.G, 1), wall: r(m.measured.wall, 2) },
+      m: { O: r(m.measured.O), I: r(m.measured.I), E: r(m.measured.E), H: r(m.measured.H), G: r(m.measured.G, 1), wall: r(m.measured.wall, 2), center: m.measured.center, deadEnd: r(m.measured.deadEnd, 3), court: r(m.measured.court, 2) },
       k: { a: r(m.knobs.a, 4), k: r(m.knobs.k, 4) },
     };
   }

@@ -2,7 +2,7 @@ import type { Building, Code, CodeId, Knobs, Lot, Model, Poly, Street, Theta } f
 import { CODE } from './codes';
 import { area, bilinear, centroid, distLine, insetConvex, isConvexCCW, lerp, scaleAbout, type V } from './geom';
 import { hash3, hs, vnoise } from './rng';
-import { coverage, hierarchyOf, meanError, orderOf, paramErrors } from './measure';
+import { coverage, deadEndShare, hierarchyOf, meanError, orderOf, paramErrors } from './measure';
 
 const clamp = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x));
 
@@ -55,6 +55,7 @@ interface Skeleton {
   radius: number;
   axes: { o: V; e: V; w: number }[];
   walls: Building[];
+  center: boolean; // T: a sacred or civic centre is part of the plan
   gArea: number; // area over which grain is averaged (excludes a central piazza)
 }
 
@@ -63,6 +64,7 @@ const SEED = 7;
 function baseWidth(code: CodeId, G: number) {
   if (code === 'tower') return clamp(0.06 * G, 14, 40);
   if (code === 'organic') return clamp(0.07 * G, 2.5, 10);
+  if (code === 'medina') return clamp(0.05 * G, 2, 6);
   if (code === 'grand') return clamp(0.09 * G, 4, 22);
   return clamp(0.12 * G, 4, 30);
 }
@@ -73,6 +75,7 @@ function displace(code: CodeId, x: number, y: number, G: number, a: number, i: n
   let jit = 0;
   switch (code) {
     case 'organic':
+    case 'medina':
     case 'grand':
       warpA = a * 1.5 * G;
       lam = 2.4 * G;
@@ -109,6 +112,8 @@ function lineKind(code: CodeId, idx: number, N: number): Street['kind'] {
       return idx % 2 === 0 ? 'main' : 'local';
     case 'organic':
       return idx % 5 === 2 ? 'main' : 'local';
+    case 'medina':
+      return idx % 6 === 3 ? 'main' : 'local';
     case 'garden':
     case 'field':
       return idx % 3 === 0 ? 'main' : 'local';
@@ -145,10 +150,13 @@ function orthoSkeleton(code: CodeId, G0: number, a: number, k: number): Skeleton
     for (let j = 0; j <= N; j++) {
       const kh = lineKind(code, j, N);
       const kv = lineKind(code, i, N);
-      wH[i].push(widthOf(kh, s, k));
-      wV[i].push(widthOf(kv, s, k));
-      if (i < N) streets.push({ a: nodes[i][j], b: nodes[i + 1][j], w: wH[i][j], kind: kh });
-      if (j < N) streets.push({ a: nodes[i][j], b: nodes[i][j + 1], w: wV[i][j], kind: kv });
+      // medina: interior lanes are closed off at random, leaving cul-de-sacs (T: dead-end street)
+      const shutH = code === 'medina' && kh === 'local' && j > 0 && j < N && hash3(i, j, SEED + 61) < 0.42;
+      const shutV = code === 'medina' && kv === 'local' && i > 0 && i < N && hash3(i, j, SEED + 62) < 0.42;
+      wH[i].push(shutH ? 0 : widthOf(kh, s, k));
+      wV[i].push(shutV ? 0 : widthOf(kv, s, k));
+      if (i < N && !shutH) streets.push({ a: nodes[i][j], b: nodes[i + 1][j], w: wH[i][j], kind: kh });
+      if (j < N && !shutV) streets.push({ a: nodes[i][j], b: nodes[i][j + 1], w: wV[i][j], kind: kv });
     }
   }
   const cells: Cell[] = [];
@@ -160,7 +168,7 @@ function orthoSkeleton(code: CodeId, G0: number, a: number, k: number): Skeleton
       const r = Math.hypot(c[0], c[1]);
       let kind: Lot['kind'] = 'built';
       if (code === 'cosmic' && r < 0.8 * G) kind = 'monument';
-      if (code === 'organic' && (hash3(i, j, SEED + 40) < 0.04 || r < 0.5 * G)) kind = 'open';
+      if ((code === 'organic' || code === 'medina') && (hash3(i, j, SEED + 40) < 0.04 || r < 0.5 * G)) kind = 'open';
       if (code === 'garden' && N >= 5 && Math.max(Math.abs(c[0]), Math.abs(c[1])) > 0.36 * S) kind = 'green';
       if (code === 'tower' && N >= 4 && r < 0.6 * G && k > 0.4) kind = 'open';
       cells.push({ poly, widths, kind });
@@ -212,7 +220,7 @@ function orthoSkeleton(code: CodeId, G0: number, a: number, k: number): Skeleton
       });
     }
   }
-  return { cells, streets, siteArea: S * S, siteShape: 'square', radius: S / 2, axes, walls, gArea: S * S };
+  return { cells, streets, siteArea: S * S, siteShape: 'square', radius: S / 2, axes, walls, center: code === 'cosmic', gArea: S * S };
 }
 
 function idealSkeleton(G0: number, a: number, k: number): Skeleton {
@@ -226,8 +234,9 @@ function idealSkeleton(G0: number, a: number, k: number): Skeleton {
   const cells: Cell[] = [];
   const streets: Street[] = [];
   const p = (r: number, al: number, kk: number, m: number, M: number): V => {
-    const jr = a * 0.3 * G * hs(kk, m + 1000 * M, SEED + 21);
-    const ja = (a * 0.3 * G * hs(kk, m + 1000 * M, SEED + 22)) / Math.max(r, 1);
+    const key = Math.round(((m % M) / M) * 3600); // same angle, same jitter: rings stay connected
+    const jr = a * 0.3 * G * hs(kk, key, SEED + 21);
+    const ja = (a * 0.3 * G * hs(kk, key, SEED + 22)) / Math.max(r, 1);
     return [(r + jr) * Math.cos(al + ja), (r + jr) * Math.sin(al + ja)];
   };
   for (let kk = 0; kk < K; kk++) {
@@ -277,7 +286,7 @@ function idealSkeleton(G0: number, a: number, k: number): Skeleton {
       w: 0,
     });
   }
-  return { cells, streets, siteArea: Math.PI * R * R, siteShape: 'circle', radius: R, axes: [], walls, gArea: Math.PI * (R * R - r0 * r0) };
+  return { cells, streets, siteArea: Math.PI * R * R, siteShape: 'circle', radius: R, axes: [], walls, center: true, gArea: Math.PI * (R * R - r0 * r0) };
 }
 
 function skeleton(code: CodeId, G: number, a: number, k: number): Skeleton {
@@ -293,12 +302,26 @@ function normalise(c: Cell): Cell {
   return { ...c, poly, widths };
 }
 
+/** split a convex quad into a grid of house plots of about `size` metres */
+function splitLot(lot: Poly, size: number): Poly[] {
+  if (lot.length !== 4) return [lot];
+  const Lu = (Math.hypot(lot[1][0] - lot[0][0], lot[1][1] - lot[0][1]) + Math.hypot(lot[2][0] - lot[3][0], lot[2][1] - lot[3][1])) / 2;
+  const Lv = (Math.hypot(lot[3][0] - lot[0][0], lot[3][1] - lot[0][1]) + Math.hypot(lot[2][0] - lot[1][0], lot[2][1] - lot[1][1])) / 2;
+  const m = Math.max(1, Math.round(Lu / size));
+  const n = Math.max(1, Math.round(Lv / size));
+  const out: Poly[] = [];
+  for (let i = 0; i < m; i++)
+    for (let j = 0; j < n; j++)
+      out.push([bilinear(lot, i / m, j / n), bilinear(lot, (i + 1) / m, j / n), bilinear(lot, (i + 1) / m, (j + 1) / n), bilinear(lot, i / m, (j + 1) / n)]);
+  return out;
+}
+
 function ringArea(lot: Poly, d: number, A: number): number {
   const q = insetConvex(lot, d);
   return q ? A - area(q) : A;
 }
 
-function perimeterParcels(code: Code, lot: Poly, c: number, G: number, salt: number): { parcels: Poly[]; frontage: number } {
+function perimeterParcels(code: Code, lot: Poly, c: number, G: number, salt: number, pwOverride?: number): { parcels: Poly[]; frontage: number; court: boolean } {
   const A = area(lot);
   const target = c * A;
   let inner: Poly | null;
@@ -316,13 +339,14 @@ function perimeterParcels(code: Code, lot: Poly, c: number, G: number, salt: num
     inner = insetConvex(lot, d);
   }
   const parcels: Poly[] = [];
+  const court = !!inner;
   if (!inner) {
     // full coverage: a ring of parcels around a solid core, no courtyard
     inner = scaleAbout(lot, centroid(lot), 0.4);
     parcels.push(inner);
   }
   let frontage = 0;
-  const pw = clamp(G * 0.22, 6, 26);
+  const pw = pwOverride ?? clamp(G * 0.22, 6, 26);
   for (let i = 0; i < lot.length; i++) {
     const a = lot[i];
     const b = lot[(i + 1) % lot.length];
@@ -341,7 +365,7 @@ function perimeterParcels(code: Code, lot: Poly, c: number, G: number, salt: num
       parcels.push([lerp(a, b, ts[q]), lerp(a, b, ts[q + 1]), lerp(a2, b2, ts[q + 1]), lerp(a2, b2, ts[q])]);
     }
   }
-  return { parcels, frontage };
+  return { parcels, frontage, court };
 }
 
 function pavilions(code: Code, lot0: Poly, c: number, fEst: number): Poly[] {
@@ -384,6 +408,8 @@ interface Built {
   lots: Lot[];
   frontage: number;
   wallLen: number;
+  houses: number;
+  courts: number;
 }
 
 /** Sutherland–Hodgman on a convex polygon, keeping n·x ≥ c; new edges on the clip line get width 0. */
@@ -462,6 +488,8 @@ function build(code: Code, sk: Skeleton, th: Theta, k: number, G: number, cScale
   let frontage = 0;
   let wallLen = 0;
   let salt = 0;
+  let houseCount = 0;
+  let courtCount = 0;
   for (const l of lots) {
     salt++;
     if (l.kind === 'open' || l.kind === 'green') continue;
@@ -473,7 +501,18 @@ function build(code: Code, sk: Skeleton, th: Theta, k: number, G: number, cScale
       const b = l.poly[(i + 1) % l.poly.length];
       return s + Math.hypot(b[0] - q[0], b[1] - q[1]);
     }, 0);
-    if (code.depth) {
+    if (code.id === 'medina') {
+      // T: courtyard house. Each lot is split into houses, each house keeps a courtyard (≥ 8%).
+      const houses = splitLot(l.poly, 15);
+      for (const h of houses) {
+        const r = perimeterParcels(code, h, Math.min(c, 0.92), G, salt++, 1e9);
+        for (const p of r.parcels) footprints.push({ poly: p, kind: 'fabric' });
+        houseCount++;
+        if (r.court) courtCount++;
+      }
+      frontage += per;
+      wallLen += per;
+    } else if (code.depth) {
       const { parcels, frontage: f } = perimeterParcels(code, l.poly, c, G, salt);
       for (const p of parcels) footprints.push({ poly: p, kind: 'fabric' });
       frontage += per;
@@ -519,7 +558,7 @@ function build(code: Code, sk: Skeleton, th: Theta, k: number, G: number, cScale
     s *= targetFA / fa;
   }
   const buildings: Building[] = fps.map((f, i) => ({ poly: f.poly, kind: f.kind, floors: floors[i], w: weights[i] }));
-  return { buildings: [...buildings, ...sk.walls], lots, frontage, wallLen };
+  return { buildings: [...buildings, ...sk.walls], lots, frontage, wallLen, houses: houseCount, courts: courtCount };
 }
 
 function measureAll(code: Code, sk: Skeleton, b: Built, cells: number) {
@@ -535,6 +574,9 @@ function measureAll(code: Code, sk: Skeleton, b: Built, cells: number) {
     H,
     G: Math.sqrt(sk.gArea / Math.max(cells, 1)),
     wall: code.depth && b.frontage > 0 ? Math.min(1, b.wallLen / b.frontage) : 0,
+    center: sk.center ? 1 : 0,
+    deadEnd: deadEndShare(sk.streets, sk.siteShape, sk.radius, Math.sqrt(sk.gArea / Math.max(cells, 1))),
+    court: b.houses ? b.courts / b.houses : 0,
   };
 }
 

@@ -1,13 +1,13 @@
 import matrixJson from '../data/matrix.json';
-import { CITY_CASES, caseById, caseWall, type Case, type Transition } from '../data/cases';
+import { CITY_CASES, caseById, caseT, caseWall, type Case, type Transition } from '../data/cases';
 import { CODES } from '../engine/codes';
-import { FIT_THRESHOLD } from '../engine/measure';
+import { FIT_THRESHOLD, tSignature } from '../engine/measure';
 import type { CodeId, Knobs, Param, Theta } from '../engine/types';
 
 export interface Cell {
   e: number;
   p: Record<Param, number>;
-  m: Theta & { wall: number };
+  m: Theta & { wall: number; center: number; deadEnd: number; court: number };
   k: Knobs;
 }
 
@@ -16,25 +16,37 @@ export const cell = (caseId: number, code: CodeId) => MATRIX[`${caseId}:${code}`
 
 export type Fit = 'full' | 'numbers' | 'none';
 
-/** full = θ within threshold and the street-wall relation R matches; numbers = θ only */
+export type TKey = 'center' | 'deadEnd' | 'court';
+
+/** structure test: relation R (street wall) and element types T, model against the documented case */
+export function structureOf(c: Case, m: Cell['m']) {
+  const rOk = m.wall >= 0.5 === caseWall(c);
+  const sig = tSignature(m);
+  const doc = caseT(c);
+  const tDiff = (Object.keys(doc) as TKey[]).filter((k) => sig[k] !== doc[k]);
+  return { rOk, tDiff, sig, doc };
+}
+
+/** full = θ within threshold and the structure (R and T) matches; numbers = θ only */
 export function fitOf(c: Case, code: CodeId): Fit {
   const x = cell(c.id, code);
   if (!x) return 'none';
   if (x.e > FIT_THRESHOLD) return 'none';
-  const wallOk = x.m.wall >= 0.5 === caseWall(c);
-  return wallOk ? 'full' : 'numbers';
+  const { rOk, tDiff } = structureOf(c, x.m);
+  return rOk && !tDiff.length ? 'full' : 'numbers';
 }
 
 export const FIT_LABEL: Record<Fit, string> = {
-  full: 'משחזר: מספרים ויחס',
-  numbers: 'מספרים בלבד: היחס R שונה',
+  full: 'משחזר: מספרים ומבנה',
+  numbers: 'מספרים בלבד: R או T שונים',
   none: 'לא משחזר',
 };
 
-export type ModelVerdict = 'evolution' | 'revolution-R' | 'revolution-P' | 'restoration' | 'hybrid' | 'out';
+export type ModelVerdict = 'evolution' | 'revolution-T' | 'revolution-R' | 'revolution-P' | 'restoration' | 'hybrid' | 'out';
 
 export const MODEL_VERDICT: Record<ModelVerdict, { he: string; doc: Transition['doc'] | null; color: string }> = {
   evolution: { he: 'אבולוציה', doc: 'evolution', color: 'var(--evo)' },
+  'revolution-T': { he: 'מהפכה באלמנט T', doc: 'revolution', color: 'var(--rev)' },
   'revolution-R': { he: 'מהפכה ביחס R', doc: 'revolution', color: 'var(--rev)' },
   'revolution-P': { he: 'מהפכה בכלל P', doc: 'revolution', color: 'var(--rev)' },
   restoration: { he: 'רסטורציה', doc: 'restoration', color: 'var(--res)' },
@@ -56,7 +68,11 @@ export function judge(t: Transition): { verdict: ModelVerdict; reproducers: Code
   restoring.sort((a, b) => (a === to.code ? -1 : b === to.code ? 1 : 0));
   if (restoring.length) return { verdict: 'restoration', reproducers, by: restoring[0], err };
   if (!reproducers.length) return { verdict: 'hybrid', reproducers, err };
-  return { verdict: own === 'numbers' ? 'revolution-R' : 'revolution-P', reproducers, by: reproducers[0], err };
+  if (own === 'numbers') {
+    const { rOk } = structureOf(to, cell(to.id, t.from).m);
+    return { verdict: rOk ? 'revolution-T' : 'revolution-R', reproducers, by: reproducers[0], err };
+  }
+  return { verdict: 'revolution-P', reproducers, by: reproducers[0], err };
 }
 
 export function agrees(t: Transition, v: ModelVerdict) {

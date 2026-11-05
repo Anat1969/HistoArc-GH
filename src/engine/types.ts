@@ -14,6 +14,7 @@ export type Lynch = 'cosmic' | 'machine' | 'organic' | 'algorithmic';
 
 export type CodeId =
   | 'organic'
+  | 'medina'
   | 'grid'
   | 'cosmic'
   | 'ideal'
@@ -67,6 +68,9 @@ export interface Measured extends Theta {
   wall: number; // street-wall continuity 0..1 (signature of R)
   phi: number; // Boeing φ on absolute bearings
   phiRel: number; // φ on bearings relative to the centre
+  center: number; // T: 1 when the plan has a sacred or civic centre
+  deadEnd: number; // T: share of street nodes that are cul-de-sacs
+  court: number; // T: share of houses built around their own courtyard
 }
 
 export interface Knobs {

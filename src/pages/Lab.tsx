@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { CODE, CODES, LYNCH } from '../engine/codes';
+import { CODE, CODES, LYNCH, T_LABEL } from '../engine/codes';
 import type { CodeId, Model, Param, Theta } from '../engine/types';
-import { CASES, CITY_CASES, caseById, caseWall } from '../data/cases';
-import { cell, fitOf, FIT_THRESHOLD, thetaDistance } from '../lib/verdict';
+import { CASES, CITY_CASES, caseById, caseT, caseWall } from '../data/cases';
+import { cell, fitOf, FIT_THRESHOLD, structureOf, thetaDistance } from '../lib/verdict';
+import { tSignature } from '../engine/measure';
 import { useModel } from '../lib/gen';
 import { replaceQuery } from '../lib/route';
 import { CodeMark } from '../components/Marks';
@@ -121,7 +122,8 @@ export default function Lab({ q }: { q: URLSearchParams }) {
   const ok = err <= FIT_THRESHOLD;
   const wallM = (m?.measured.wall ?? 0) >= 0.5;
   const wallCase = cs ? caseWall(cs) : null;
-  const wallMismatch = cs && pristine && wallCase !== null && wallM !== wallCase;
+  const st = cs && m ? structureOf(cs, m.measured) : null;
+  const wallMismatch = !!(cs && pristine && st && (!st.rOk || st.tDiff.length > 0));
   const off = m ? (Object.keys(m.errors) as Param[]).filter((p) => m.errors[p] > 0.04) : [];
   const near = useMemo(
     () =>
@@ -137,14 +139,18 @@ export default function Lab({ q }: { q: URLSearchParams }) {
     ? 'בונה את העיר'
     : ok
       ? wallMismatch
-        ? 'המספרים תואמים. היחס R לא.'
+        ? st && !st.rOk
+          ? 'המספרים תואמים. היחס R לא.'
+          : 'המספרים תואמים. האלמנטים T לא.'
         : `הקוד ${C.name} משחזר את הערכים.`
       : `מחוץ לתחום של ${C.name}.`;
   const sub = !m
     ? ''
     : ok
       ? wallMismatch
-        ? `דופן הרחוב במודל ${wallM ? 'רציפה' : 'נעדרת'}, ובמקרה ${wallCase ? 'רציפה' : 'נעדרת'}. שינוי ערכים לא מספיק כאן: נדרש שינוי ביחס.`
+        ? st && !st.rOk
+          ? `דופן הרחוב במודל ${wallM ? 'רציפה' : 'נעדרת'}, ובמקרה ${wallCase ? 'רציפה' : 'נעדרת'}. שינוי ערכים לא מספיק כאן: נדרש שינוי ביחס.`
+          : `שונה: ${st?.tDiff.map((k) => T_LABEL[k]).join(', ')}. שינוי ערכים לא מספיק כאן: נדרש אלמנט אחר.`
         : 'שינוי ערכים בתוך אותו קוד: לפי המודל זו אבולוציה.'
       : `הכללים של הקוד לא מגיעים ל-${off.map((p) => PARAM_META[p].he).join(', ')}. כדי לשחזר נדרש אלמנט, יחס או כלל אחר: מהפכה.`;
 
@@ -281,6 +287,24 @@ export default function Lab({ q }: { q: URLSearchParams }) {
                 </>
               )}
             </span>
+          </div>
+          <div className="hr" />
+          <div className="label">האלמנטים T: נמדדים במודל{cs ? ` מול ${cs.he}` : ''}</div>
+          <div className="errbars">
+            {(['center', 'deadEnd', 'court'] as const).map((k) => {
+              const has = m ? tSignature(m.measured)[k] : false;
+              const doc = cs ? caseT(cs)[k] : null;
+              const off = doc !== null && pristine && has !== doc;
+              return (
+                <div key={k} className="errbar" style={{ gridTemplateColumns: 'minmax(0,1fr) auto auto' }}>
+                  <span>{T_LABEL[k]}</span>
+                  <span className="mono small">{m ? (has ? 'יש' : 'אין') : '—'}</span>
+                  <span className="small" style={{ color: off ? 'var(--rev)' : 'var(--grey)', minWidth: 64 }}>
+                    {doc === null ? '' : off ? `במקרה: ${doc ? 'יש' : 'אין'}` : 'תואם'}
+                  </span>
+                </div>
+              );
+            })}
           </div>
           {cs && pristine && (
             <>

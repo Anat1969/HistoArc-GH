@@ -146,6 +146,37 @@ export function coverage(bs: Building[], siteArea: number) {
   return { E: fp / siteArea, I: fa / siteArea, footprint: fp };
 }
 
+/** share of interior street nodes of degree 1 (cul-de-sacs); nodes near the site edge are ignored */
+export function deadEndShare(streets: Street[], shape: 'square' | 'circle', half: number, G: number): number {
+  const deg = new Map<string, { n: number; x: number; y: number }>();
+  const key = (p: [number, number]) => `${Math.round(p[0] * 10)}|${Math.round(p[1] * 10)}`;
+  for (const s of streets) {
+    if (s.kind === 'axis') continue; // through-routes laid over the fabric
+    for (const p of [s.a, s.b]) {
+      const k = key(p);
+      const d = deg.get(k) ?? { n: 0, x: p[0], y: p[1] };
+      d.n++;
+      deg.set(k, d);
+    }
+  }
+  let all = 0;
+  let ends = 0;
+  for (const d of deg.values()) {
+    const edge = shape === 'square' ? Math.max(Math.abs(d.x), Math.abs(d.y)) > half - 0.6 * G : Math.hypot(d.x, d.y) > half - 0.6 * G;
+    if (edge) continue;
+    all++;
+    if (d.n === 1) ends++;
+  }
+  return all ? ends / all : 0;
+}
+
+/** T signature read from a model: which element types are present [ה: thresholds] */
+export const tSignature = (m: { center: number; deadEnd: number; court: number }) => ({
+  center: m.center >= 0.5,
+  deadEnd: m.deadEnd > 0.04,
+  court: m.court > 0.5,
+});
+
 const LN10 = Math.log(10);
 
 /** per-parameter error, all on a 0..1-ish scale; I and G compared in log decades */

@@ -1,0 +1,93 @@
+"""
+Calibration pipeline for קוד העיר: replaces the assessed θ of real cities with measured values.
+
+Runs offline (needs OpenStreetMap / Overpass access, which the build environment does not have):
+    pip install osmnx==2.0.1 momepy==0.9.1 geopandas
+    python pipeline/calibrate.py > pipeline/measured.json
+
+Measures, per city, inside a 700 m square around the centre point (the app's plate size):
+    O  Boeing (2019) orientation order φ, 36 bins, via osmnx.bearing
+    E  GSI  = Σ footprint / area                         (Spacematrix 2010)
+    I  FSI  = Σ footprint × floors / area, floors from building:levels, else height / 3.3, else 2 [ה]
+    G  √(area / number of street blocks)                 (momepy tessellation is optional)
+    wall  share of street length with a building within 3 m (relation R)
+H is not computed here: use depthmapX integration variance and report the radius.
+Each value is written with method, source, state year and confidence, per spec section 5.
+"""
+import json
+import math
+
+import geopandas as gpd
+import osmnx as ox
+
+HALF = 350  # metres
+
+CITIES = {  # case id: (name, lat, lon), the ten cities of spec section 11.1
+    19: ("Eixample, Barcelona", 41.3917, 2.1649),
+    18: ("Paris", 48.8738, 2.2950),
+    8: ("Fès el-Bali", 34.0644, -4.9733),
+    22: ("Tel Aviv", 32.0771, 34.7746),
+    27: ("Ashdod", 31.7918, 34.6497),
+    26: ("Chandigarh", 30.7333, 76.7794),
+    28: ("Brasília", -15.7939, -47.8828),
+    17: ("Manhattan", 40.7549, -73.9840),
+    7: ("Kyoto", 35.0116, 135.7681),
+    10: ("Siena", 43.3186, 11.3307),
+}
+
+
+def phi(G):
+    Gu = ox.convert.to_undirected(ox.bearing.add_edge_bearings(G))
+    H0 = ox.bearing.orientation_entropy(Gu, num_bins=36)
+    Hg, Hmax = math.log(4), math.log(36)
+    return max(0.0, 1 - ((H0 - Hg) / (Hmax - Hg)) ** 2) if H0 > Hg else 1.0
+
+
+def floors(row):
+    lv = row.get("building:levels")
+    try:
+        return max(1.0, float(lv))
+    except (TypeError, ValueError):
+        pass
+    try:
+        return max(1.0, float(str(row.get("height")).split()[0]) / 3.3)
+    except (TypeError, ValueError):
+        return 2.0  # assumption [נ]
+
+
+def measure(lat, lon):
+    G = ox.graph_from_point((lat, lon), dist=HALF, dist_type="bbox", network_type="all", simplify=True)
+    Gp = ox.project_graph(G)
+    b = ox.features_from_point((lat, lon), tags={"building": True}, dist=HALF)
+    b = b[b.geometry.type.isin(["Polygon", "MultiPolygon"])].to_crs(Gp.graph["crs"])
+    nodes, edges = ox.graph_to_gdfs(Gp)
+    c = nodes.unary_union.centroid
+    box = gpd.GeoSeries([c.buffer(HALF, cap_style=3)], crs=Gp.graph["crs"])
+    area = float(box.area.iloc[0])
+    b = gpd.clip(b, box)
+    fp = b.geometry.area
+    fl = b.apply(floors, axis=1)
+    blocks = box.iloc[0].difference(edges.buffer(4).unary_union)
+    n_blocks = len(getattr(blocks, "geoms", [blocks]))
+    near = edges.geometry.length.sum()
+    lined = edges.buffer(3).intersection(b.unary_union).length.sum() if len(b) else 0.0
+    return {
+        "O": round(phi(Gp), 3),
+        "E": round(float(fp.sum() / area), 3),
+        "I": round(float((fp * fl).sum() / area), 3),
+        "G": round(math.sqrt(area / max(n_blocks, 1)), 1),
+        "wall": round(min(1.0, float(lined / near)) if near else 0.0, 2),
+        "method": "osmnx_phi+spacematrix",
+        "source": "OpenStreetMap (ODbL)",
+        "confidence": 0.6,
+    }
+
+
+if __name__ == "__main__":
+    out = {}
+    for cid, (name, lat, lon) in CITIES.items():
+        try:
+            out[cid] = {"name": name, **measure(lat, lon)}
+        except Exception as e:  # keep going, report the gap
+            out[cid] = {"name": name, "error": str(e)}
+    print(json.dumps(out, ensure_ascii=False, indent=2))

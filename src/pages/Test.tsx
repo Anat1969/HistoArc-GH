@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { CITY_CASES, DOC_TYPE, TRANSITIONS, caseById, caseWall } from '../data/cases';
-import { CODE, CODES } from '../engine/codes';
+import { CODE, CODES, T_LABEL } from '../engine/codes';
 import type { CodeId } from '../engine/types';
-import { agrees, cell, fitOf, FIT_LABEL, FIT_THRESHOLD, judge, MODEL_VERDICT, stats } from '../lib/verdict';
+import { agrees, cell, fitOf, structureOf, FIT_LABEL, FIT_THRESHOLD, judge, MODEL_VERDICT, stats } from '../lib/verdict';
 import { go } from '../lib/route';
 import { CodeMark } from '../components/Marks';
 import { PARAM_META } from './Lab';
 
 const WHY: Record<string, string> = {
-  t2: 'הקוד הקוסמי משחזר את מילטוס. המודל לא רואה הסרה של אלמנט (המרכז הקדוש), רק ערכים ויחס. נדרש מבחן T.',
-  t3: 'הקוד האורגני משחזר את פאס. רחוב ללא מוצא וחצר פנימית אינם במחולל: האנומליה מצביעה על גן חסר בסכמה.',
   t4: 'פלמנובה משוחזרת בקוד הקוסמי, שהיה קיים אלפי שנים קודם. קריאה אפשרית: העיר האידיאלית כחזרה לקוסמי, לא כהכלאה.',
   t5: 'רומא של סיקסטוס משוחזרת בקוד האורגני: הצירים נחתכים בתוך רקמה קיימת. לפי המודל הבארוק הוא אורגני עם צירים, לא המשך של העיר האידיאלית.',
 };
@@ -40,10 +38,10 @@ export default function Test() {
           מבחן הקוד · {st.runs} הרצות: {st.cities} ערים × {CODES.length} קודים
         </div>
         <h1>
-          המספרים לבדם לא מבדילים בין קודים. <mark>היחס R</mark> כן.
+          המספרים לבדם לא מבדילים בין קודים. <mark>המבנה, R ו-T,</mark> כן.
         </h1>
         <p>
-          ב-<b>{st.foreignFull}</b> הרצות קוד זר משחזר עיר במלואה. ב-<b>{st.numbersOnly}</b> נוספות המספרים תואמים, אבל דופן הרחוב הפוכה. {agree} מתוך {TRANSITIONS.length} המעברים ההיסטוריים מסכימים עם
+          ב-<b>{st.foreignFull}</b> הרצות קוד זר משחזר עיר במלואה. ב-<b>{st.numbersOnly}</b> נוספות המספרים תואמים, אבל דופן הרחוב או האלמנטים שונים. {agree} מתוך {TRANSITIONS.length} המעברים ההיסטוריים מסכימים עם
           האפיון. {TRANSITIONS.length - agree} הם אנומליות, וכל אחת מצביעה על גן חסר.
         </p>
       </div>
@@ -182,8 +180,8 @@ export default function Test() {
             </span>
           </div>
           <p className="tiny muted">
-            כלל ההכרעה [ה]: הקוד הקודם משחזר את המקרה החדש (שגיאה עד {FIT_THRESHOLD} ודופן רחוב תואמת): אבולוציה. אחרת, קוד שכבר היה בשימוש לפני המקרה משחזר: רסטורציה. אחרת: מהפכה ביחס R כשהמספרים תואמים, או בכלל P
-            כשלא. שום קוד לא משחזר: הכלאה.
+            כלל ההכרעה [ה]: הקוד הקודם משחזר את המקרה החדש (שגיאה עד {FIT_THRESHOLD}, דופן רחוב תואמת ואותם אלמנטים T): אבולוציה. אחרת, קוד שכבר היה בשימוש לפני המקרה משחזר: רסטורציה. אחרת, כשהמספרים
+            תואמים: מהפכה באלמנט T או ביחס R. כשלא: מהפכה בכלל P. שום קוד לא משחזר: הכלאה.
           </p>
         </section>
       </div>
@@ -201,7 +199,8 @@ export default function Test() {
                   {(['O', 'I', 'E', 'H', 'G'] as const).map((p) => `${p} ${x.p[p].toFixed(2)}`).join(' · ')}
                 </div>
                 <div className="tiny muted">
-                  דופן רחוב: במודל {Math.round(x.m.wall * 100)}%, במקרה {caseWall(c) ? 'רציפה' : 'נעדרת'}. הסטייה הגדולה: {PARAM_META[(['O', 'I', 'E', 'H', 'G'] as const).reduce((a, b) => (x.p[a] > x.p[b] ? a : b))].he}.
+                  דופן רחוב: במודל {Math.round(x.m.wall * 100)}%, במקרה {caseWall(c) ? 'רציפה' : 'נעדרת'}.
+                  {structureOf(c, x.m).tDiff.length > 0 && <> אלמנטים שונים: {structureOf(c, x.m).tDiff.map((k) => T_LABEL[k]).join(', ')}.</>} הסטייה הגדולה: {PARAM_META[(['O', 'I', 'E', 'H', 'G'] as const).reduce((a, b) => (x.p[a] > x.p[b] ? a : b))].he}.
                 </div>
               </>
             );

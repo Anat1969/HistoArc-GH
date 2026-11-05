@@ -50,8 +50,8 @@ const SOURCES = [
   'B. Hillier & J. Hanson, The Social Logic of Space, 1984',
   'G. Stiny & J. Gips, Shape Grammars, 1972; Stiny & Mitchell, The Palladian Grammar, 1978',
   'M. Berghauser Pont & P. Haupt, Spacematrix, 2010',
-  'G. Boeing, Urban spatial order, Applied Network Science 4:67, 2019',
-  'T. S. Kuhn, The Structure of Scientific Revolutions, 1962',
+  'G. Boeing, Urban spatial order, Applied Network Science 4:67, 2019. doi:10.1007/s41109-019-0189-1 [אומת]',
+  'T. S. Kuhn, The Structure of Scientific Revolutions, 1962; 2nd ed. 1970, p. 150 [אומת]',
   'P. Steadman, The Evolution of Designs, 1979 (2008)',
   'P. Schumacher, The Autopoiesis of Architecture, 2011–2012',
 ];
@@ -89,7 +89,7 @@ export default function Method() {
           </div>
         </section>
         <section>
-          <h2>שמונה קודים</h2>
+          <h2>{CODES.length} קודים</h2>
           <div className="ind">
             {CODES.map((c) => (
               <div key={c.id} style={{ padding: '8px 10px' }}>
@@ -119,8 +119,8 @@ export default function Method() {
           </p>
           <h2 style={{ marginTop: 16 }}>מה המודל לא רואה</h2>
           <ul className="small" style={{ paddingInlineStart: 16, margin: 0 }}>
-            <li>הסרה של אלמנט T, כמו מרכז קדוש: לכן מילטוס נראית כהמשך של הקוסמי.</li>
-            <li>רחוב ללא מוצא וחצר פנימית: לכן פאס נראית כהמשך של רומא.</li>
+            <li>מבחן T רואה שלושה אלמנטים בלבד: מרכז, רחוב ללא מוצא ובית חצר. חגורה ירוקה, חומה וציר נמדדים דרך θ ו-R.</li>
+            <li>שימושי קרקע, טקטוניקה וחומר: נשמרים כגנים תיאוריים, לא נמדדים.</li>
             <li>קנה מבנה: באוהאוס, נאקאגין והיידר אלייב מחוץ למחולל בגרסה זו.</li>
           </ul>
         </section>
@@ -132,7 +132,7 @@ export default function Method() {
           <p className="small" style={{ margin: '6px 0 0' }}>
             במובן שאינני יכול להסביר יותר, תומכיהן של פרדיגמות מתחרות עוסקים במלאכתם בעולמות שונים.
           </p>
-          <div className="tiny muted">Thomas Kuhn, The Structure of Scientific Revolutions, 1962. התרגום שלי. לאמת עמוד מול המהדורה.</div>
+          <div className="tiny muted">Thomas Kuhn, The Structure of Scientific Revolutions, מהדורה שנייה 1970, עמ' 150. אומת. התרגום שלי.</div>
           <p style={{ marginTop: 12 }}>
             <mark>תובנה:</mark> בעולם של לה קורבוזיה ובעולם של סרדה יכולים להיות אותם מספרים. מה שמשתנה הוא היחס בין הבית לרחוב.
           </p>
@@ -157,7 +157,7 @@ export default function Method() {
               <li key={s}>{s}</li>
             ))}
           </ul>
-          <p className="tiny muted">המקורות מבוססים על ידע מחקרי מוכר ולא אומתו מול קטלוג בעבודה זו. לאמת שנה ומהדורה מול קטלוג ספרייה או DOI.</p>
+          <p className="tiny muted">שני מקורות אומתו ברשת (מסומנים). השאר מבוססים על ידע מחקרי מוכר, ויש לאמת שנה ומהדורה מול קטלוג ספרייה.</p>
         </section>
       </div>
     </div>

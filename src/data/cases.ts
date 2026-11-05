@@ -1,5 +1,5 @@
 import type { CodeId, Theta } from '../engine/types';
-import { CODE } from '../engine/codes';
+import { CODE, CODE_T } from '../engine/codes';
 
 export interface Case {
   id: number;
@@ -13,6 +13,7 @@ export interface Case {
   hybrid?: CodeId; // second code for hybrids [ה]
   theta: Theta | null; // null for building-scale cases in this version
   wallOverride?: boolean; // documented street wall when it differs from the primary code [ה]
+  tOverride?: Partial<{ center: boolean; deadEnd: boolean; court: boolean }>;
   gNote?: string;
   commons: string;
   status: 'built' | 'unbuilt' | 'demolished' | 'living';
@@ -33,8 +34,8 @@ export const CASES: Case[] = [
   { id: 5, he: 'רומא הקיסרית', orig: 'Roma', period: 'מאה 2', year: 150, paradigm: 'אורגני ומונומנטלי', scale: 'city', code: 'organic', theta: { O: 0.2, I: 2.0, E: 0.7, H: 0.6, G: 70 }, commons: C + 'Nolli_Map', status: 'built' },
   { id: 6, he: 'צ\'אנג-אן', orig: 'Chang\'an, 長安', period: '582–904', year: 582, paradigm: 'קוסמי, רשת מוקפת חומה', scale: 'city', code: 'cosmic', theta: { O: 0.95, I: 0.3, E: 0.35, H: 0.95, G: 500 }, gNote: '500+', commons: C + "Chang'an", status: 'built' },
   { id: 7, he: 'הייאן-קיו (קיוטו)', orig: 'Heian-kyō, 平安京', period: '794', year: 794, paradigm: 'קוסמי, רשת', scale: 'city', code: 'cosmic', theta: { O: 0.95, I: 0.3, E: 0.4, H: 0.9, G: 120 }, commons: C + 'Heian-kyō', status: 'built' },
-  { id: 8, he: 'פאס אל-באלי', orig: 'Fès el-Bali, فاس البالي', period: 'מאה 9 ואילך', year: 850, paradigm: 'אורגני, מדינה', scale: 'city', code: 'organic', theta: { O: 0.05, I: 1.5, E: 0.85, H: 0.5, G: 50 }, commons: C + 'Medina_of_Fez', status: 'living' },
-  { id: 9, he: 'עכו העתיקה', orig: 'Akko, عكا', period: 'צלבני ועות\'מאני', year: 1200, paradigm: 'אורגני, מדינה', scale: 'city', code: 'organic', theta: { O: 0.1, I: 1.5, E: 0.8, H: 0.5, G: 50 }, commons: C + 'Acre,_Israel', status: 'living' },
+  { id: 8, he: 'פאס אל-באלי', orig: 'Fès el-Bali, فاس البالي', period: 'מאה 9 ואילך', year: 850, paradigm: 'אורגני, מדינה', scale: 'city', code: 'medina', theta: { O: 0.05, I: 1.5, E: 0.85, H: 0.5, G: 50 }, commons: C + 'Medina_of_Fez', status: 'living' },
+  { id: 9, he: 'עכו העתיקה', orig: 'Akko, عكا', period: 'צלבני ועות\'מאני', year: 1200, paradigm: 'אורגני, מדינה', scale: 'city', code: 'medina', theta: { O: 0.1, I: 1.5, E: 0.8, H: 0.5, G: 50 }, commons: C + 'Acre,_Israel', status: 'living' },
   { id: 10, he: 'סיינה', orig: 'Siena', period: 'מאות 13–14', year: 1300, paradigm: 'אורגני, קומונה', scale: 'city', code: 'organic', theta: { O: 0.15, I: 1.8, E: 0.75, H: 0.7, G: 60 }, commons: C + 'Siena', status: 'living' },
   { id: 11, he: 'מונפזייה', orig: 'Monpazier', period: '1284', year: 1284, paradigm: 'רשת, בסטיד', scale: 'city', code: 'grid', theta: { O: 0.85, I: 0.6, E: 0.55, H: 0.5, G: 57 }, gNote: '40×80', commons: C + 'Monpazier', status: 'living' },
   { id: 12, he: 'פלמנובה', orig: 'Palmanova', period: '1593', year: 1593, paradigm: 'עיר אידיאלית, רדיאלית', scale: 'city', code: 'ideal', theta: { O: 0.9, I: 0.5, E: 0.45, H: 1.0, G: 80 }, commons: C + 'Palmanova', status: 'living' },
@@ -67,6 +68,9 @@ export const CITY_CASES = CASES.filter((c) => c.theta);
 
 /** relation R: does the building define the street (street wall) in this case? */
 export const caseWall = (c: Case) => c.wallOverride ?? CODE[c.code].wall;
+
+/** documented element types T of a case: the primary code's signature unless the case says otherwise [ה] */
+export const caseT = (c: Case) => ({ ...CODE_T[c.code], ...(c.tOverride ?? {}) });
 export const caseById = (id: number) => CASES.find((c) => c.id === id);
 
 export interface Transition {

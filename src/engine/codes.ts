@@ -21,6 +21,20 @@ export const CODES: Code[] = [
     note: 'פאס, סיינה, עכו: הרקמה נבנית מהחלקה אל הרחוב.',
   },
   {
+    id: 'medina',
+    name: 'מדינה',
+    short: 'סמטה ללא מוצא ובית חצר',
+    lynch: 'organic',
+    T: ['רחוב ללא מוצא', 'בית חצר', 'סמטה', 'כיכר מקרית'],
+    R: ['המבנה מגדיר את הרחוב', 'הפרטיות גוברת על המעבר'],
+    P: ['צמיחה מלמטה לפי דין: הבית נסגר פנימה'],
+    bounds: { O: [0, 0.4], H: [0.2, 0.75], G: [15, 150] },
+    floorsMax: 4,
+    depth: [2, 999],
+    wall: true,
+    note: 'פאס, עכו: אותה רקמה צפופה, אבל עם שני אלמנטים חדשים: הסמטה הסגורה והחצר הפנימית.',
+  },
+  {
     id: 'grid',
     name: 'רשת',
     short: 'בלוק היקפי ברשת מוטלת',
@@ -131,11 +145,27 @@ export const LYNCH: Record<Lynch, { name: string; color: string; note: string }>
   algorithmic: { name: 'אלגוריתמי', color: 'var(--algo)', note: 'מחוץ לשלישייה של לינץ\'' },
 };
 
+/** T signature each code produces: the element types the T test looks for */
+export const CODE_T: Record<CodeId, { center: boolean; deadEnd: boolean; court: boolean }> = {
+  organic: { center: false, deadEnd: false, court: false },
+  medina: { center: false, deadEnd: true, court: true },
+  grid: { center: false, deadEnd: false, court: false },
+  cosmic: { center: true, deadEnd: false, court: false },
+  ideal: { center: true, deadEnd: false, court: false },
+  grand: { center: false, deadEnd: false, court: false },
+  garden: { center: false, deadEnd: false, court: false },
+  tower: { center: false, deadEnd: false, court: false },
+  field: { center: false, deadEnd: false, court: false },
+};
+
+export const T_LABEL = { center: 'מרכז קדוש או אזרחי', deadEnd: 'רחוב ללא מוצא', court: 'בית חצר' } as const;
+
 export const codeColor = (id: CodeId) => LYNCH[CODE[id].lynch].color;
 
 /** marker shape distinguishes codes that share a Lynch colour */
 export const CODE_MARK: Record<CodeId, 'circle' | 'square' | 'diamond' | 'triangle'> = {
   organic: 'circle',
+  medina: 'square',
   garden: 'diamond',
   grid: 'square',
   tower: 'triangle',
