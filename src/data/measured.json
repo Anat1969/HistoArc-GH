@@ -1,1 +1,42 @@
-{}
+{
+  "19": {
+    "name": "Eixample, Barcelona",
+    "error": "Graph must be unprojected to add edge bearings."
+  },
+  "18": {
+    "name": "Paris",
+    "error": "Graph must be unprojected to add edge bearings."
+  },
+  "8": {
+    "name": "Fès el-Bali",
+    "error": "'overpass-api.de' responded: 502 Bad Gateway # 502 Gateway Timeout\n\nThis Overpass API server is currently at capacity. All query workers are busy\nand the request queue is full.\n\n## What to do\n\nRetry your request using exponential backoff: wait a short interval, then retry.\nIf the request fails again, double the wait time and retry again.\n\n## For heavy or automated use\n\nThis public endpoint is intended for browser-based and human-operated tools.\nFor automated or high-volume use, run a local Overpass API instance:\n\nhttps://github.com/b1tw153/Overpass-API/blob/main/README.md\n"
+  },
+  "22": {
+    "name": "Tel Aviv",
+    "error": "Graph must be unprojected to add edge bearings."
+  },
+  "27": {
+    "name": "Ashdod",
+    "error": "'overpass-api.de' responded: 502 Bad Gateway # 502 Gateway Timeout\n\nThis Overpass API server is currently at capacity. All query workers are busy\nand the request queue is full.\n\n## What to do\n\nRetry your request using exponential backoff: wait a short interval, then retry.\nIf the request fails again, double the wait time and retry again.\n\n## For heavy or automated use\n\nThis public endpoint is intended for browser-based and human-operated tools.\nFor automated or high-volume use, run a local Overpass API instance:\n\nhttps://github.com/b1tw153/Overpass-API/blob/main/README.md\n"
+  },
+  "26": {
+    "name": "Chandigarh",
+    "error": "Graph must be unprojected to add edge bearings."
+  },
+  "28": {
+    "name": "Brasília",
+    "error": "Graph must be unprojected to add edge bearings."
+  },
+  "17": {
+    "name": "Manhattan",
+    "error": "HTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/interpreter (Caused by ConnectTimeoutError(<HTTPSConnection(host='overpass-api.de', port=443) at 0x7f56fdb361b0>, 'Connection to overpass-api.de timed out. (connect timeout=180)'))"
+  },
+  "7": {
+    "name": "Kyoto",
+    "error": "'overpass-api.de' responded: 502 Bad Gateway # 502 Gateway Timeout\n\nThis Overpass API server is currently at capacity. All query workers are busy\nand the request queue is full.\n\n## What to do\n\nRetry your request using exponential backoff: wait a short interval, then retry.\nIf the request fails again, double the wait time and retry again.\n\n## For heavy or automated use\n\nThis public endpoint is intended for browser-based and human-operated tools.\nFor automated or high-volume use, run a local Overpass API instance:\n\nhttps://github.com/b1tw153/Overpass-API/blob/main/README.md\n"
+  },
+  "10": {
+    "name": "Siena",
+    "error": "HTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/interpreter (Caused by ConnectTimeoutError(<HTTPSConnection(host='overpass-api.de', port=443) at 0x7f56ff3d2900>, 'Connection to overpass-api.de timed out. (connect timeout=180)'))"
+  }
+}
