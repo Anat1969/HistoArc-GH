@@ -8,6 +8,15 @@ import { useModel } from '../lib/gen';
 import { replaceQuery } from '../lib/route';
 import { CodeMark } from '../components/Marks';
 import { Plan } from '../components/Plan';
+import { SiteMap } from '../components/SiteMap';
+import { CasePhoto } from '../components/CasePhoto';
+import { LENSES, PARAM_DOC, SCENARIOS, type ParamDoc, type Snapshot } from '../data/knowledge';
+import { PLACES } from '../data/places';
+import { personById } from '../data/architects';
+import { explainChange, lensShift } from '../lib/writer';
+import { store, uid } from '../lib/store';
+import { requestModel } from '../lib/gen';
+import { go } from '../lib/route';
 
 const City3D = lazy(() => import('../components/City3D'));
 
@@ -52,7 +61,7 @@ function boundsFor(p: Param, code: CodeId, theta: Theta): [number, number] {
   return [0.02, c.floorsMax * Math.min(theta.E, c.bounds.E?.[1] ?? 1)];
 }
 
-function Slider({ M, p, value, measured, bounds, onChange }: { M: Meta; p: Param; value: number; measured?: number; bounds: [number, number]; onChange: (v: number) => void }) {
+function Slider({ M, p, value, measured, bounds, onChange, doc }: { M: Meta; p: Param; value: number; measured?: number; bounds: [number, number]; onChange: (v: number) => void; doc?: ParamDoc }) {
   const m = M[p];
   const a = Math.max(0, Math.min(1, toPos(M, p, bounds[0])));
   const b = Math.max(0, Math.min(1, toPos(M, p, bounds[1])));
@@ -86,6 +95,28 @@ function Slider({ M, p, value, measured, bounds, onChange }: { M: Meta; p: Param
           style={{ direction: 'rtl' }}
         />
       </div>
+      {doc && (
+        <details className="more" style={{ marginTop: 4, padding: '4px 10px' }}>
+          <summary>מה זה אומר?</summary>
+          <div className="small" style={{ display: 'grid', gap: 4, marginTop: 6 }}>
+            <div>{doc.what}</div>
+            <div className="muted">{doc.unit}</div>
+            <div>
+              <b>מעלים:</b> {doc.up}
+            </div>
+            <div>
+              <b>מורידים:</b> {doc.down}
+            </div>
+            <div>
+              <b>במודל:</b> {doc.shows}
+            </div>
+            <div className="muted">
+              <b>מקור:</b> {doc.source} <b>מגבלה:</b> {doc.limit}
+            </div>
+            <div className="tiny muted">זה ערך יעד פיזי שהמודל בונה ומודד, לא משקל בניקוד.</div>
+          </div>
+        </details>
+      )}
     </div>
   );
 }
@@ -99,7 +130,17 @@ function initial(q: URLSearchParams) {
   const theta: Theta = { ...base };
   for (const p of ['O', 'I', 'E', 'H', 'G'] as Param[]) if (q.get(p)) theta[p] = Number(q.get(p));
   const code = (q.get('code') as CodeId) || c?.code || 'grid';
-  return { caseId: c?.theta ? c.id : 0, theta, code: CODE[code] ? code : 'grid' };
+  const sc = SCENARIOS.find((x) => x.id === q.get('scenario'));
+  if (sc) {
+    const c2 = caseById(sc.caseId)!;
+    return { caseId: c2.id, theta: { ...c2.theta!, ...sc.set }, code: sc.code, from: sc.id };
+  }
+  const person = personById(q.get('person') ?? '');
+  if (person?.reading) {
+    const c2 = c?.theta && c.scale === 'city' ? c : caseById(27)!;
+    return { caseId: c2.id, theta: { ...c2.theta!, ...person.reading.set }, code: person.reading.code, from: person.id };
+  }
+  return { caseId: c?.theta ? c.id : 0, theta, code: CODE[code] ? code : 'grid', from: undefined as string | undefined };
 }
 
 export default function Lab({ q }: { q: URLSearchParams }) {
@@ -108,6 +149,10 @@ export default function Lab({ q }: { q: URLSearchParams }) {
   const [theta, setTheta] = useState<Theta>(init.theta);
   const [code, setCode] = useState<CodeId>(init.code);
   const [rise, setRise] = useState(0);
+  const [view, setView] = useState<'model' | 'map'>('model');
+  const [from, setFrom] = useState<string | undefined>(init.from);
+  const [saved, setSaved] = useState('');
+  const [baseModel, setBaseModel] = useState<Model | null>(null);
   const cs = caseById(caseId);
   const pristine = !!cs?.theta && (['O', 'I', 'E', 'H', 'G'] as Param[]).every((p) => cs.theta![p] === theta[p]);
   const seed = pristine ? cell(caseId, code)?.k : undefined;
@@ -120,6 +165,7 @@ export default function Lab({ q }: { q: URLSearchParams }) {
   const pickCase = (id: number) => {
     const c = caseById(id);
     if (!c?.theta) return;
+    setFrom(undefined);
     setCaseId(id);
     setTheta({ ...c.theta });
     setCode(c.code);
@@ -131,6 +177,56 @@ export default function Lab({ q }: { q: URLSearchParams }) {
   };
 
   const m: Model | null = model;
+  // the case as it is, in the chosen code: the "before" of every change
+  const base: Snapshot | null = cs?.theta ? (cell(caseId, code)?.m as Snapshot | undefined) ?? null : null;
+  useEffect(() => {
+    if (!cs?.theta || pristine) {
+      setBaseModel(null);
+      return;
+    }
+    let alive = true;
+    requestModel(cs.theta, code, cell(caseId, code)?.k).then((bm) => alive && setBaseModel(bm));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseId, code, pristine]);
+  const scenario = SCENARIOS.find((x) => x.id === from);
+  const person = personById(from ?? '');
+  const applyScenario = (id: string) => {
+    const sc = SCENARIOS.find((x) => x.id === id);
+    if (!sc) return;
+    const c2 = caseById(sc.caseId)!;
+    setCaseId(c2.id);
+    setTheta({ ...c2.theta!, ...sc.set });
+    setCode(sc.code);
+    setFrom(sc.id);
+    setRise((r) => r + 1);
+  };
+  const saveAlt = () => {
+    if (!m) return;
+    const name =
+      window.prompt('שם לחלופה', `${cs?.he ?? 'אתר חופשי'} · ${CODE[code].name}${scenario ? ` · ${scenario.title}` : person ? ` · לפי ${person.he}` : ''}`) ?? '';
+    if (!name.trim()) return;
+    const struct = cs ? structureOf(cs, m.measured) : null;
+    const fit = !cs ? 'free' : m.error > FIT_THRESHOLD ? 'none' : struct && struct.rOk && !struct.tDiff.length ? 'full' : 'numbers';
+    const okSave = store.saveAlt({
+      id: uid(),
+      name: name.trim(),
+      createdAt: new Date().toISOString(),
+      scale: CODE[code].scale ?? 'city',
+      caseId,
+      code,
+      theta: { ...theta },
+      measured: { O: m.measured.O, I: m.measured.I, E: m.measured.E, H: m.measured.H, G: m.measured.G, wall: m.measured.wall, center: m.measured.center, deadEnd: m.measured.deadEnd, court: m.measured.court },
+      error: m.error,
+      fit,
+      note: scenario?.watch ?? person?.reading?.why ?? '',
+      from,
+      knobs: m.knobs,
+    });
+    setSaved(okSave ? `נשמר: ${name.trim()}` : 'השמירה נכשלה: הדפדפן חוסם אחסון מקומי');
+  };
   const err = m?.error ?? 0;
   const ok = err <= FIT_THRESHOLD;
   const wallM = (m?.measured.wall ?? 0) >= 0.5;
@@ -232,6 +328,7 @@ export default function Lab({ q }: { q: URLSearchParams }) {
             <Slider
               key={p}
               M={META}
+              doc={PARAM_DOC[scale][p]}
               p={p}
               value={theta[p]}
               measured={m ? m.measured[p] : undefined}
@@ -248,14 +345,55 @@ export default function Lab({ q }: { q: URLSearchParams }) {
 
         <section className="stage" aria-label="המודל התלת-ממדי">
           <div className="lens" style={{ margin: 0 }}>
+            <p className="q">
+              {scenario
+                ? `התרחיש: ${scenario.question}`
+                : person?.reading
+                  ? `כך הייתה הגישה של ${person.he} קוראת את ${cs?.he}: ${person.reading.why} [פרשנות]`
+                  : `השאלה: האם קוד ${C.name} מסביר את ${cs?.he ?? 'הערכים'}? ומה משתנה כשמזיזים ערך?`}
+            </p>
             <div className="kicker">
               {cs ? `${cs.he} · ${cs.orig} · ${cs.period}` : 'ערכים חופשיים'} · קוד {C.name}
               {cs && (cs.assessed ? ` · θ נמדד מ-OpenStreetMap ${cs.measuredYear ?? ''}` : cs.measureNote ? ` · ${cs.measureNote}` : ' · θ הערכה [ה]')}
             </div>
             <h1>{ok && !wallMismatch ? headline : <span>{headline}</span>}</h1>
             <p>{sub}</p>
+            {scenario && <p className="small" style={{ margin: '4px 0 0' }}><mark>למה לשים לב:</mark> {scenario.watch}</p>}
+            <div className="filters" style={{ marginTop: 8, marginBottom: 0 }}>
+              <button className="press primary" onClick={saveAlt} disabled={!m}>
+                שמור כחלופה
+              </button>
+              <select value={scenario?.id ?? ''} onChange={(e) => applyScenario(e.target.value)} aria-label="תרחיש מוסבר" style={{ width: 'auto', maxWidth: 260 }}>
+                <option value="">תרחיש מוסבר…</option>
+                {SCENARIOS.filter((x) => x.scale === scale).map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.title}
+                  </option>
+                ))}
+              </select>
+              <div className="tabs" role="tablist" style={{ margin: 0 }}>
+                <button className="press" aria-pressed={view === 'model'} onClick={() => setView('model')}>
+                  מודל
+                </button>
+                <button className="press" aria-pressed={view === 'map'} onClick={() => setView('map')} disabled={!PLACES[caseId]} title={PLACES[caseId] ? '' : 'אין מיקום לאתר הזה'}>
+                  על המפה
+                </button>
+              </div>
+              {saved && (
+                <span className="small">
+                  {saved}.{' '}
+                  <button className="press ghost" onClick={() => go('/alts')}>
+                    לחלופות
+                  </button>
+                </span>
+              )}
+            </div>
           </div>
           <div className="canvas-wrap">
+            {view === 'map' && PLACES[caseId] ? (
+              <SiteMap model={m} lat={PLACES[caseId].lat} lon={PLACES[caseId].lon} note={`מיקום: ${PLACES[caseId].note}`} color="#a8740f" />
+            ) : (
+              <>
             <Suspense fallback={<div className="busy">טוען תלת-ממד</div>}>
               <City3D model={m} rise={rise} />
             </Suspense>
@@ -277,11 +415,75 @@ export default function Lab({ q }: { q: URLSearchParams }) {
                 {isB ? `מבנה ${m ? Math.round(m.site / 2.2) * 2 : '—'} מ' · ${m?.buildings.length ?? '—'} רכיבים · קומה 3.6 מ'` : `אתר ${m ? Math.round(m.site) : '—'} מ' · ${m?.buildings.length ?? '—'} מבנים · קומה 3.3 מ'`}
               </div>
             </div>
+              </>
+            )}
           </div>
         </section>
 
         <aside className="readout" aria-label="מדידה והתאמה">
-          <div className="label">שגיאת התאמה (ממוצע 5 מחוונים)</div>
+          <div className="label">מה זה אומר לחיי היומיום</div>
+          <div className="card" style={{ padding: '8px 12px' }}>
+            {LENSES[scale].map((l) => {
+              const now = m ? l.value(m.measured as Snapshot) : NaN;
+              const was = base ? l.value(base) : NaN;
+              const sh = !pristine && base && m ? lensShift(l, was, now) : null;
+              return (
+                <div key={l.id} className="lensrow" title={`${l.question} מקור: ${l.source}`}>
+                  <span>
+                    <b>{l.he}</b>
+                    <div className="small">{m ? l.read(now) : ''}</div>
+                  </span>
+                  <span className="mono">{m ? l.fmt(now) : '—'}</span>
+                  <span className={'delta ' + (sh && sh.good === true ? 'up' : sh && sh.good === false ? 'down' : '')}>
+                    {sh && sh.dir !== 'same' ? `${sh.dir === 'up' ? '▲' : '▼'} מ-${l.fmt(was)}` : ''}
+                  </span>
+                </div>
+              );
+            })}
+            <div className="tiny muted" style={{ marginTop: 4 }}>
+              העדשות הן קריאה של הצורה דרך הספרות (פרשנות), לא מדידה של התנהגות. ריחוף על שורה מציג את המקור.
+            </div>
+          </div>
+          {!pristine && base && m && (
+            <>
+              <div className="hr" />
+              <div className="label">לפני ואחרי</div>
+              {(() => {
+                const ex = explainChange(scale, base, m.measured as Snapshot);
+                return (
+                  <div className="small" style={{ display: 'grid', gap: 4 }}>
+                    {ex.lines.map((x) => (
+                      <div key={x}>{x}</div>
+                    ))}
+                    {ex.joint && (
+                      <div>
+                        <mark>יחד:</mark> {ex.joint}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+              <div className="pair" style={{ marginTop: 8 }}>
+                <figure>
+                  <Plan model={baseModel} windowM={isB ? 70 : 700} />
+                  <figcaption>לפני: {cs?.he}</figcaption>
+                </figure>
+                <figure>
+                  <Plan model={m} windowM={isB ? 70 : 700} />
+                  <figcaption>אחרי</figcaption>
+                </figure>
+              </div>
+            </>
+          )}
+          {cs && (
+            <>
+              <div className="hr" />
+              <CasePhoto c={cs} />
+            </>
+          )}
+          <details className="more">
+            <summary>פירוט המבחן: שגיאה, יחס R, אלמנטים T וקודים</summary>
+          <div className="label" style={{ marginTop: 8 }}>שגיאת התאמה (ממוצע 5 מחוונים)</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
             <span className="bignum" style={{ color: ok ? 'var(--evo)' : 'var(--rev)' }}>
               {m ? err.toFixed(3) : '—'}
@@ -376,6 +578,7 @@ export default function Lab({ q }: { q: URLSearchParams }) {
               </button>
             ))}
           </div>
+          </details>
         </aside>
       </div>
     </div>

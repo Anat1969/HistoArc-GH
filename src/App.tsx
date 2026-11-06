@@ -7,6 +7,9 @@ const Lab = lazy(() => import('./pages/Lab'));
 const Atlas = lazy(() => import('./pages/Atlas'));
 const Test = lazy(() => import('./pages/Test'));
 const Method = lazy(() => import('./pages/Method'));
+const Alts = lazy(() => import('./pages/Alts'));
+const Outputs = lazy(() => import('./pages/Outputs'));
+const People = lazy(() => import('./pages/People'));
 
 export default function App() {
   const { path, q } = useRoute();
@@ -16,7 +19,7 @@ export default function App() {
   let page;
   switch (path) {
     case '/lab':
-      page = <Lab key={q.get('case') + ':' + q.get('code')} q={q} />;
+      page = <Lab key={[q.get('case'), q.get('code'), q.get('scenario'), q.get('person')].join(':')} q={q} />;
       break;
     case '/atlas':
       page = <Atlas />;
@@ -26,6 +29,15 @@ export default function App() {
       break;
     case '/method':
       page = <Method />;
+      break;
+    case '/alts':
+      page = <Alts />;
+      break;
+    case '/out':
+      page = <Outputs key={q.get('id') ?? ''} q={q} />;
+      break;
+    case '/people':
+      page = <People />;
       break;
     default:
       page = <Home />;

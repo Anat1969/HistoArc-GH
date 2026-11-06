@@ -2,7 +2,11 @@ import { createElement, useEffect } from 'react';
 import { AppIcon } from './Marks';
 
 const LINKS = [
+  { path: '/', label: 'השאלה' },
   { path: '/lab', label: 'מעבדה' },
+  { path: '/alts', label: 'חלופות' },
+  { path: '/out', label: 'תוצרים' },
+  { path: '/people', label: 'אדריכלים' },
   { path: '/atlas', label: 'פרלל' },
   { path: '/test', label: 'מבחן הקוד' },
   { path: '/method', label: 'שיטה' },
