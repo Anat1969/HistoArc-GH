@@ -27,8 +27,11 @@ export function placeFor(caseId: number): Place | null {
   const w = WD[String(caseId)];
   if (!base && !w) return null;
   const calibrated = base?.note === 'נקודת הכיול' || base?.note.startsWith('נקודת הכיול');
+  // Wikidata only when precise: a town item rounded to one decimal is worse than a named landmark point
+  const dec = (x: number) => (String(x).split('.')[1] ?? '').length;
+  const precise = !!w && dec(w.lat) >= 3 && dec(w.lon) >= 3;
   const p =
-    calibrated || !w
+    calibrated || !w || !precise
       ? { lat: base!.lat, lon: base!.lon, note: base!.note, source: (calibrated ? 'calibration' : 'approx') as Place['source'] }
       : { lat: w.lat, lon: w.lon, note: `Wikidata: ${w.label}`, source: 'wikidata' as const };
   let align: Align = { dx: 0, dy: 0, rot: 0, scale: 1 };
