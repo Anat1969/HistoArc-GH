@@ -2,6 +2,7 @@ import imagesJson from '../data/images.json';
 import type { Case } from '../data/cases';
 import { CODE } from '../engine/codes';
 import type { CodeId } from '../engine/types';
+import { placeFor, satelliteUrl } from '../lib/place';
 
 interface Img {
   title: string;
@@ -31,8 +32,54 @@ const WATCH: Partial<Record<CodeId, string>> = {
   continuous: 'המשטח שעובר מקיר לגג בלי תפר.',
 };
 
+/** the site itself from above, at the same scale as the plate: the relevant picture by construction */
+export function SitePhoto({ c }: { c: Case }) {
+  const pl = placeFor(c.id);
+  if (!pl) return <div className="small muted">פרויקט שלא נבנה: אין תצלום אוויר.</div>;
+  const half = c.scale === 'building' ? 35 : 350;
+  return (
+    <figure className="photo" style={{ margin: 0 }}>
+      <img src={satelliteUrl(pl.lat, pl.lon, half, 480, 480)} alt={`תצלום לוויין של ${c.he}`} loading="lazy" style={{ aspectRatio: '1' }} />
+      <figcaption className="cap">
+        <div>
+          <b>מה רואים:</b> {c.he} מלמעלה, ריבוע של {half * 2} מ': אותו קנה מידה כמו התוכנית של המודל.
+        </div>
+        {WATCH[c.code] && (
+          <div>
+            <b>למה לשים לב:</b> {WATCH[c.code]}
+          </div>
+        )}
+        <div className="tiny muted">תצלום: Esri, Maxar, Earthstar Geographics. מיקום: {pl.note}.</div>
+      </figcaption>
+    </figure>
+  );
+}
+
 export function CasePhoto({ c }: { c: Case }) {
   const img = IMAGES[String(c.id)];
+  const ground = !img ? (
+    <div className="small muted">
+      {c.commons && (
+        <a href={c.commons} target="_blank" rel="noreferrer">
+          תמונות מהקרקע ב-Wikimedia Commons
+        </a>
+      )}
+    </div>
+  ) : null;
+  return (
+    <div style={{ display: 'grid', gap: 8 }}>
+      <SitePhoto c={c} />
+      {ground ?? (
+        <details className="more" style={{ marginTop: 0 }}>
+          <summary>תמונה מהקרקע</summary>
+          <GroundPhoto c={c} img={img} />
+        </details>
+      )}
+    </div>
+  );
+}
+
+function GroundPhoto({ c, img }: { c: Case; img: Img }) {
   if (!img)
     return (
       <div className="small muted">

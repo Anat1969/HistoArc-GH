@@ -21,6 +21,9 @@ jobs:
           python-version: '3.12'
       - run: pip install -r pipeline/requirements.txt
       - run: python pipeline/calibrate.py src/data/measured.json
+      - name: Coordinates from Wikidata
+        if: always()
+        run: python pipeline/places.py src/data/places_wd.json
       - name: Photographs from Wikimedia Commons
         if: always()
         run: python pipeline/images.py src/data/images.json
@@ -29,7 +32,7 @@ jobs:
         run: |
           git config user.name "calibration-bot"
           git config user.email "calibration-bot@users.noreply.github.com"
-          git add src/data/measured.json src/data/images.json
+          git add src/data/measured.json src/data/images.json src/data/places_wd.json
           git diff --cached --quiet && echo "no change" && exit 0
           git commit -m "כיול: ערכי θ נמדדים מ-OpenStreetMap"
           git push

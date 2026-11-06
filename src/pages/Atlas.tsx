@@ -7,6 +7,7 @@ import { requestModel } from '../lib/gen';
 import { go } from '../lib/route';
 import { CodeMark, markPath } from '../components/Marks';
 import { Plan } from '../components/Plan';
+import { placeFor, satelliteUrl } from '../lib/place';
 
 type Sort = 'year' | 'O' | 'I' | 'E';
 const SORTS: { id: Sort; he: string }[] = [
@@ -93,6 +94,7 @@ export default function Atlas() {
   const [lynch, setLynch] = useState<Lynch | 'all'>('all');
   const [sort, setSort] = useState<Sort>('year');
   const [hot, setHot] = useState<number | null>(null);
+  const [real, setReal] = useState(false);
   const [models, setModels] = useState<Record<number, Model>>({});
 
   // plans are generated in the worker one by one, with the knobs solved at build time
@@ -145,6 +147,9 @@ export default function Atlas() {
                 {LYNCH[l].name}
               </button>
             ))}
+            <button className="press" aria-pressed={real} onClick={() => setReal((x) => !x)} title="אותו קנה מידה כמו התוכניות">
+              {real ? 'מציאות: תצלום לוויין' : 'מודל: תוכנית'}
+            </button>
             <span className="muted small" style={{ marginInlineStart: 12 }}>
               מיון:
             </span>
@@ -165,7 +170,9 @@ export default function Atlas() {
                 aria-label={`${c.he}, ${c.period}`}
               >
                 <div className="plate">
-                  {c.theta ? (
+                  {real && placeFor(c.id) ? (
+                    <img src={satelliteUrl(placeFor(c.id)!.lat, placeFor(c.id)!.lon, c.scale === 'building' ? 35 : 350, 256, 256)} alt={`תצלום לוויין של ${c.he}`} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  ) : c.theta ? (
                     models[c.id] ? (
                       <Plan model={models[c.id]} windowM={c.scale === 'building' ? 70 : 700} />
                     ) : (

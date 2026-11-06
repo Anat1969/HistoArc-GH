@@ -11,7 +11,7 @@ import { Plan } from '../components/Plan';
 import { SiteMap } from '../components/SiteMap';
 import { CasePhoto } from '../components/CasePhoto';
 import { LENSES, PARAM_DOC, SCENARIOS, type ParamDoc, type Snapshot } from '../data/knowledge';
-import { PLACES } from '../data/places';
+import { placeFor } from '../lib/place';
 import { personById } from '../data/architects';
 import { explainChange, lensShift } from '../lib/writer';
 import { store, uid } from '../lib/store';
@@ -375,7 +375,7 @@ export default function Lab({ q }: { q: URLSearchParams }) {
                 <button className="press" aria-pressed={view === 'model'} onClick={() => setView('model')}>
                   מודל
                 </button>
-                <button className="press" aria-pressed={view === 'map'} onClick={() => setView('map')} disabled={!PLACES[caseId]} title={PLACES[caseId] ? '' : 'אין מיקום לאתר הזה'}>
+                <button className="press" aria-pressed={view === 'map'} onClick={() => setView('map')} disabled={!placeFor(caseId)} title={placeFor(caseId) ? '' : 'אין מיקום לאתר הזה (פרויקט שלא נבנה)'}>
                   על המפה
                 </button>
               </div>
@@ -390,8 +390,8 @@ export default function Lab({ q }: { q: URLSearchParams }) {
             </div>
           </div>
           <div className="canvas-wrap">
-            {view === 'map' && PLACES[caseId] ? (
-              <SiteMap model={m} lat={PLACES[caseId].lat} lon={PLACES[caseId].lon} note={`מיקום: ${PLACES[caseId].note}`} color="#a8740f" />
+            {view === 'map' && placeFor(caseId) ? (
+              <SiteMap key={caseId} model={m} place={placeFor(caseId)!} caseId={caseId} color="#a8740f" />
             ) : (
               <>
             <Suspense fallback={<div className="busy">טוען תלת-ממד</div>}>

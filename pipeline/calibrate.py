@@ -86,6 +86,19 @@ def phi(lines):
     return 1.0 if H0 <= Hg else max(0.0, 1 - ((H0 - Hg) / (Hmax - Hg)) ** 2)
 
 
+def dominant_bearing(lines):
+    """the grid's main direction, folded to 0–90°: the angle to rotate the model so its streets meet the real ones"""
+    h = [0.0] * 90
+    for ln in lines:
+        c = list(ln.coords)
+        for (x1, y1), (x2, y2) in zip(c, c[1:]):
+            L = math.hypot(x2 - x1, y2 - y1)
+            if L > 1e-6:
+                h[int(math.degrees(math.atan2(y2 - y1, x2 - x1)) % 90)] += L
+    sm = [sum(h[(i + d) % 90] for d in (-2, -1, 0, 1, 2)) for i in range(90)]
+    return sm.index(max(sm))
+
+
 def floors(row):
     if row.get("num_floors"):
         return max(1.0, float(row["num_floors"]))
@@ -137,6 +150,7 @@ def measure(lat, lon):
         "E": round(fp / area, 3),
         "I": round(fa / area, 3),
         "G": round(math.sqrt(area / max(len(blocks), 1)), 1),
+        "bearing": dominant_bearing(roads),
         "G_art": round(math.sqrt(area / max(len(super_blocks), 1)), 1),
         "wall": round(min(1.0, lined / length), 2) if length else 0.0,
         "roads": len(roads),
