@@ -1,1 +1,110 @@
-{}
+{
+  "1": {
+    "lat": 27.329166666,
+    "lon": 68.138888888,
+    "item": "http://www.wikidata.org/entity/Q5725",
+    "label": "Mohenjo-daro"
+  },
+  "2": {
+    "lat": 32.522907,
+    "lon": 44.42415,
+    "item": "http://www.wikidata.org/entity/Q5684",
+    "label": "Babylon"
+  },
+  "3": {
+    "lat": 37.530233,
+    "lon": 27.278369,
+    "item": "http://www.wikidata.org/entity/Q169460",
+    "label": "Miletus"
+  },
+  "7": {
+    "lat": 35.0,
+    "lon": 135.76666667,
+    "item": "http://www.wikidata.org/entity/Q751907",
+    "label": "Heian-kyō"
+  },
+  "10": {
+    "lat": 43.318333333,
+    "lon": 11.331388888,
+    "item": "http://www.wikidata.org/entity/Q2751",
+    "label": "Siena"
+  },
+  "11": {
+    "lat": 44.680833333,
+    "lon": 0.894166666,
+    "item": "http://www.wikidata.org/entity/Q382281",
+    "label": "Monpazier"
+  },
+  "12": {
+    "lat": 45.9,
+    "lon": 13.316667,
+    "item": "http://www.wikidata.org/entity/Q53302",
+    "label": "Palmanova"
+  },
+  "16": {
+    "lat": 26.915,
+    "lon": 75.82,
+    "item": "http://www.wikidata.org/entity/Q66485",
+    "label": "Jaipur"
+  },
+  "20": {
+    "lat": 51.978,
+    "lon": -0.23,
+    "item": "http://www.wikidata.org/entity/Q19801",
+    "label": "Letchworth Garden City"
+  },
+  "21": {
+    "lat": 32.69,
+    "lon": 35.196666666,
+    "item": "http://www.wikidata.org/entity/Q1724338",
+    "label": "Nahalal"
+  },
+  "23": {
+    "lat": 51.8392,
+    "lon": 12.2267,
+    "item": "http://www.wikidata.org/entity/Q516770",
+    "label": "Bauhaus Dessau"
+  },
+  "26": {
+    "lat": 30.733333333,
+    "lon": 76.779722222,
+    "item": "http://www.wikidata.org/entity/Q43433",
+    "label": "Chandigarh"
+  },
+  "27": {
+    "lat": 31.797777777,
+    "lon": 34.650277777,
+    "item": "http://www.wikidata.org/entity/Q171639",
+    "label": "Ashdod"
+  },
+  "29": {
+    "lat": 31.252222222,
+    "lon": 34.786666666,
+    "item": "http://www.wikidata.org/entity/Q41843",
+    "label": "Beersheba"
+  },
+  "30": {
+    "lat": 35.66564,
+    "lon": 139.76345,
+    "item": "http://www.wikidata.org/entity/Q1633586",
+    "label": "Nakagin Capsule Tower"
+  },
+  "31": {
+    "lat": 30.320119444,
+    "lon": -86.137705555,
+    "item": "http://www.wikidata.org/entity/Q612989",
+    "label": "Seaside"
+  },
+  "32": {
+    "lat": 19.044,
+    "lon": 72.856388888,
+    "item": "http://www.wikidata.org/entity/Q649632",
+    "label": "Dharavi"
+  },
+  "38": {
+    "lat": 48.924444444,
+    "lon": 2.028333333,
+    "item": "http://www.wikidata.org/entity/Q940746",
+    "label": "Villa Savoye"
+  }
+}
